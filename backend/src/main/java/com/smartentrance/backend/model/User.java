@@ -44,7 +44,6 @@ public class User {
     private String hashedPassword;
 
     @Transient
-    @NotNull @NotBlank
     private String password;
 
     @Column(name = "created_at", nullable = false, updatable = false)
