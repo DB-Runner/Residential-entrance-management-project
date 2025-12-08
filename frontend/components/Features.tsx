@@ -4,7 +4,7 @@ const features = [
   {
     icon: MessageSquare,
     title: 'Комуникация',
-    description: 'Лесна комуникация между съседи и с управителя на входа'
+    description: 'Лесна комуникация с управителя на входа'
   },
   {
     icon: Receipt,
@@ -19,7 +19,7 @@ const features = [
   {
     icon: Users,
     title: 'Управление на жители',
-    description: 'Централизирана база данни с контакти и информация'
+    description: 'Централизирана база данни'
   },
   {
     icon: Bell,

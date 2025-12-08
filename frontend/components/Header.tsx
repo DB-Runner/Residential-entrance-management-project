@@ -11,7 +11,7 @@ export function Header() {
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
           <Building2 className="w-8 h-8 text-blue-600" />
-          <span className="text-blue-600">Жилищни Входове</span>
+          <span className="text-blue-600">SmartEntrance</span>
         </Link>
         
         {/* Вход/Регистрация отдясно */}

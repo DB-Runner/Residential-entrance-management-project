@@ -38,7 +38,7 @@ export function Footer() {
                 <Mail className="w-5 h-5 text-gray-600 mt-1" />
                 <div>
                   <p className="text-gray-900">Имейл</p>
-                  <p className="text-gray-600">info@jilishni-vhodove.bg</p>
+                  <p className="text-gray-600">info@smartentrance.bg</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -60,7 +60,7 @@ export function Footer() {
         </div>
         
         <div className="mt-8 pt-8 border-t text-center text-gray-600">
-          <p>&copy; 2025 Жилищни Входове. Всички права запазени.</p>
+          <p>&copy; 2025 SmartEntrance. Всички права запазени.</p>
         </div>
       </div>
     </footer>

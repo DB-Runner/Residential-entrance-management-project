@@ -15,6 +15,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   role: UserRole;
+  unitNumber?: string;
 }
 
 // Mock данни за демонстрация (използва се когато backend не е наличен)
@@ -51,8 +52,17 @@ export const authService = {
       localStorage.setItem('isAuthenticated', 'true');
       
       return { user };
-    } catch (error) {
-      // Fallback към mock данни ако backend не е наличен
+    } catch (error: any) {
+      // Ако грешката е ApiError, пропускаме я нагоре
+      if (error.name === 'ApiError') {
+        // Специфична обработка на 401 Unauthorized
+        if (error.status === 401) {
+          throw new Error('Грешен имейл или парола');
+        }
+        throw error;
+      }
+      
+      // Fallback към mock данни само ако backend не е наличен (network error)
       console.warn('Backend не е наличен, използват се mock данни');
       
       const mockUser = MOCK_USERS[credentials.email];
@@ -82,8 +92,13 @@ export const authService = {
       localStorage.setItem('isAuthenticated', 'true');
       
       return { user };
-    } catch (error) {
-      // Fallback към mock данни ако backend не е наличен
+    } catch (error: any) {
+      // Ако грешката е ApiError, пропускаме я нагоре
+      if (error.name === 'ApiError' || error instanceof Error) {
+        throw error;
+      }
+      
+      // Fallback към mock данни само ако backend не е наличен (network error)
       console.warn('Backend не е наличен, създава се mock потребител');
       
       const newUser: User = {

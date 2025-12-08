@@ -17,7 +17,7 @@ const menuItems = [
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   return (
-    <aside className="w-64 bg-white border-r min-h-[calc(100vh-73px)] fixed left-0 top-[73px]">
+    <aside className="w-64 mt-4 bg-white border-r min-h-[calc(100vh-73px)] fixed left-0 top-[73px]">
       <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {

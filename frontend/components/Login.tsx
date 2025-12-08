@@ -44,7 +44,7 @@ export function Login() {
                 <Building2 className="w-8 h-8 text-blue-600" />
               </div>
             </div>
-            <h2 className="mb-2 text-gray-900">Добре дошли обратно</h2>
+            <h2 className="mb-2 text-gray-900">Добре дошли</h2>
             <p className="text-gray-600">Влезте във вашия акаунт</p>
           </div>
 
@@ -101,12 +101,14 @@ export function Login() {
                 />
                 <span className="text-gray-700">Запомни ме</span>
               </label>
+              {/*}
               <button
                 type="button"
                 className="text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Забравена парола?
               </button>
+              */}
             </div>
 
             <button

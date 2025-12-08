@@ -6,16 +6,12 @@ import com.smartentrance.backend.dto.UserResponse;
 import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.repository.UserRepository;
 import com.smartentrance.backend.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,11 +19,13 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final UserService userService;
-    private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
+    // ---------------- REGISTER ----------------
     @PostMapping("/register")
     public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody RegisterUserRequest request) {
+
         User user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
@@ -45,19 +43,17 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    // ---------------- LOGIN ----------------
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
-        );
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Записване на контекста за сесия, може и да го махна
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found after successful authentication."));
+        // Проверка на паролата
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getHashedPassword())) {
+            return ResponseEntity.status(401).body("Invalid email or password");
+        }
 
         UserResponse response = new UserResponse();
         response.setId(user.getId());
