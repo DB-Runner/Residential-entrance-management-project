@@ -11,6 +11,11 @@ export enum PaymentStatus {
   FAILED = 'FAILED'
 }
 
+export enum FundType {
+  MAINTENANCE = 'MAINTENANCE',  // Фонд Поддръжка
+  REPAIR = 'REPAIR'              // Фонд Ремонти
+}
+
 export interface User {
   id: number;
   fullName: string;
@@ -56,6 +61,7 @@ export interface UnitFee {
   unitId: number;
   month: string; // LocalDate as ISO string
   amount: number;
+  fundType: FundType;
   dueFrom: string; // LocalDate as ISO string
   dueTo: string; // LocalDate as ISO string
   isPaid: boolean;

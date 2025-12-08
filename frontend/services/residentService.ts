@@ -40,7 +40,6 @@ export const residentService = {
     try {
       return await api.get<ResidentWithUnit[]>('/residents');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни за жители');
       return MOCK_RESIDENTS;
     }
   },
@@ -50,7 +49,6 @@ export const residentService = {
     try {
       return await api.get<ResidentWithUnit>(`/residents/${id}`);
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни');
       const resident = MOCK_RESIDENTS.find(r => r.id === id);
       if (!resident) throw new Error('Жителят не е намерен');
       return resident;
@@ -62,7 +60,6 @@ export const residentService = {
     try {
       return await api.post<ResidentWithUnit>('/residents', data);
     } catch (error) {
-      console.warn('Backend не е наличен, използва се mock отговор');
       const newResident: ResidentWithUnit = {
         id: Math.floor(Math.random() * 1000) + 100,
         ...data,
@@ -78,7 +75,6 @@ export const residentService = {
     try {
       return await api.put<ResidentWithUnit>(`/residents/${id}`, data);
     } catch (error) {
-      console.warn('Backend не е наличен, използва се mock отговор');
       throw new Error('Жителят не може да бъде редактиран в момента');
     }
   },
@@ -88,7 +84,6 @@ export const residentService = {
     try {
       await api.delete(`/residents/${id}`);
     } catch (error) {
-      console.warn('Backend не е наличен');
       throw new Error('Жителят не може да бъде изтрит в момента');
     }
   },

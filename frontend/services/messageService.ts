@@ -45,7 +45,6 @@ export const messageService = {
     try {
       return await api.get<Message[]>('/messages/my');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни за съобщения');
       return MOCK_MESSAGES;
     }
   },
@@ -55,7 +54,6 @@ export const messageService = {
     try {
       return await api.get<Message[]>('/messages/unread');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни');
       return MOCK_MESSAGES.filter(m => !m.isRead);
     }
   },
@@ -65,7 +63,7 @@ export const messageService = {
     try {
       await api.patch(`/messages/${id}/read`, {});
     } catch (error) {
-      console.warn('Backend не е наличен');
+      // Silent fail
     }
   },
 
@@ -74,7 +72,6 @@ export const messageService = {
     try {
       return await api.post<Message>('/messages', data);
     } catch (error) {
-      console.warn('Backend не е наличен, използва се mock отговор');
       const newMessage: Message = {
         id: Math.floor(Math.random() * 1000) + 100,
         senderId: 1,
@@ -93,7 +90,6 @@ export const messageService = {
     try {
       await api.delete(`/messages/${id}`);
     } catch (error) {
-      console.warn('Backend не е наличен');
       throw new Error('Съобщението не може да бъде изтрито в момента');
     }
   },

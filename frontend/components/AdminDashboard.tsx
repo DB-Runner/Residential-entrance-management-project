@@ -5,9 +5,10 @@ import { ResidentsManagement } from './ResidentsManagement';
 import { PaymentsManagement } from './PaymentsManagement';
 import { EventsManagement } from './EventsManagement';
 import { AnnouncementsManagement } from './AnnouncementsManagement';
-import { useState } from 'react';
-
-type AdminView = 'overview' | 'residents' | 'payments' | 'events' | 'announcements' | 'reports';
+import { BuildingRegistrationModal } from './BuildingRegistrationModal';
+import { useState, useEffect } from 'react';
+import { buildingService } from '../services/buildingService';
+import { AdminView } from '../types/views';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -15,6 +16,36 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [currentView, setCurrentView] = useState<AdminView>('overview');
+  const [showBuildingModal, setShowBuildingModal] = useState(false);
+  const [checkingBuilding, setCheckingBuilding] = useState(true);
+
+  useEffect(() => {
+    checkBuildingStatus();
+  }, []);
+
+  const checkBuildingStatus = async () => {
+    try {
+      const hasBuilding = await buildingService.hasBuilding();
+      setShowBuildingModal(!hasBuilding);
+    } catch (err) {
+      console.error('Error checking building status:', err);
+    } finally {
+      setCheckingBuilding(false);
+    }
+  };
+
+  const handleBuildingRegistrationComplete = (code: string) => {
+    console.log('Building registered with code:', code);
+    setShowBuildingModal(false);
+  };
+
+  if (checkingBuilding) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">Зареждане...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -23,12 +54,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       <div className="flex">
         <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
         
-        <main className="flex-1 p-6 ml-64">
+        <main className="flex-1 p-6">
           {currentView === 'overview' && <AdminOverview />}
           {currentView === 'residents' && <ResidentsManagement />}
           {currentView === 'payments' && <PaymentsManagement />}
           {currentView === 'events' && <EventsManagement />}
-          {currentView === 'announcements' && <AnnouncementsManagement />}
+          {/*currentView === 'announcements' && <AnnouncementsManagement />*/}
           {currentView === 'reports' && (
             <div>
               <h1 className="text-gray-900 mb-6">Отчети</h1>
@@ -39,6 +70,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           )}
         </main>
       </div>
+
+      {/* Building Registration Modal */}
+      {showBuildingModal && (
+        <BuildingRegistrationModal onComplete={handleBuildingRegistrationComplete} />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { api } from '../config/api';
 import type { Payment, PaymentWithDetails, UnitFee, UnitFeeWithDetails } from '../types/database';
+import { FundType } from '../types/database';
 
 export interface PaymentSummary {
   totalPaid: number;
@@ -16,6 +17,7 @@ const MOCK_FEES: UnitFeeWithDetails[] = [
     unitId: 1,
     month: '2024-12-01',
     amount: 120.50,
+    fundType: FundType.MAINTENANCE,
     dueFrom: '2024-12-01',
     dueTo: '2024-12-31',
     isPaid: false,
@@ -25,8 +27,21 @@ const MOCK_FEES: UnitFeeWithDetails[] = [
   {
     id: 2,
     unitId: 1,
+    month: '2024-12-01',
+    amount: 45.00,
+    fundType: FundType.REPAIR,
+    dueFrom: '2024-12-01',
+    dueTo: '2024-12-31',
+    isPaid: false,
+    createdAt: '2024-11-25T10:00:00',
+    updatedAt: '2024-11-25T10:00:00',
+  },
+  {
+    id: 3,
+    unitId: 1,
     month: '2024-11-01',
     amount: 115.00,
+    fundType: FundType.MAINTENANCE,
     dueFrom: '2024-11-01',
     dueTo: '2024-11-30',
     isPaid: true,
@@ -34,15 +49,16 @@ const MOCK_FEES: UnitFeeWithDetails[] = [
     updatedAt: '2024-11-15T14:30:00',
   },
   {
-    id: 3,
+    id: 4,
     unitId: 1,
-    month: '2024-10-01',
-    amount: 118.75,
-    dueFrom: '2024-10-01',
-    dueTo: '2024-10-31',
+    month: '2024-11-01',
+    amount: 40.00,
+    fundType: FundType.REPAIR,
+    dueFrom: '2024-11-01',
+    dueTo: '2024-11-30',
     isPaid: true,
-    createdAt: '2024-09-25T10:00:00',
-    updatedAt: '2024-10-12T09:20:00',
+    createdAt: '2024-10-25T10:00:00',
+    updatedAt: '2024-11-15T14:30:00',
   },
 ];
 
@@ -52,7 +68,7 @@ export const paymentService = {
     try {
       return await api.get<UnitFeeWithDetails[]>('/payments/my-fees');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни за такси');
+      // Fallback към mock данни
       return MOCK_FEES;
     }
   },
@@ -62,7 +78,6 @@ export const paymentService = {
     try {
       return await api.get<UnitFeeWithDetails[]>(`/payments/units/${unitId}/fees`);
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни');
       return MOCK_FEES;
     }
   },
@@ -72,7 +87,6 @@ export const paymentService = {
     try {
       return await api.get<UnitFeeWithDetails[]>('/payments/fees');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни');
       return MOCK_FEES;
     }
   },
@@ -82,7 +96,6 @@ export const paymentService = {
     try {
       return await api.get<PaymentSummary>('/payments/summary');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни');
       const paid = MOCK_FEES.filter(f => f.isPaid);
       const pending = MOCK_FEES.filter(f => !f.isPaid);
       return {
@@ -100,7 +113,6 @@ export const paymentService = {
     try {
       return await api.post<Payment>(`/payments/fees/${feeId}/pay`, { bankReference });
     } catch (error) {
-      console.warn('Backend не е наличен, използва се mock отговор');
       throw new Error('Плащането не може да бъде обработено в момента');
     }
   },

@@ -1,6 +1,5 @@
-import { LayoutDashboard, Users, Receipt, Calendar, /*Megaphone*/ FileText } from 'lucide-react';
-
-type AdminView = 'overview' | 'residents' | 'payments' | 'events' | 'reports';
+import { LayoutDashboard, Users, Receipt, Calendar, /*Megaphone,*/ FileText } from 'lucide-react';
+import { AdminView } from '../types/views';
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -18,7 +17,7 @@ const menuItems = [
 
 export function AdminSidebar({ currentView, onViewChange }: AdminSidebarProps) {
   return (
-    <aside className="w-64 mt-4 bg-white border-r min-h-[calc(100vh-73px)] fixed left-0 top-[73px]">
+    <aside className="w-64 bg-white border-r sticky top-[73px] h-[calc(100vh-73px)] self-start">
       <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {

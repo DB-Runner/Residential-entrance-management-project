@@ -64,10 +64,12 @@ export function ResidentsManagement() {
           <h1 className="text-gray-900 mb-2">Управление на жители</h1>
           <p className="text-gray-600">Общо {residents.length} жители</p>
         </div>
+        {/*
         <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
           <UserPlus className="w-5 h-5" />
           Добави жител
         </button>
+        */}
       </div>
 
       {/* Търсене */}

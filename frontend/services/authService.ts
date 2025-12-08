@@ -16,6 +16,12 @@ export interface RegisterRequest {
   password: string;
   role: UserRole;
   unitNumber?: string;
+  buildingCode?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
 }
 
 // Mock данни за демонстрация (използва се когато backend не е наличен)
@@ -82,40 +88,45 @@ export const authService = {
   },
 
   // Регистрация
-  register: async (data: RegisterRequest): Promise<LoginResponse> => {
+  register: async (data: RegisterRequest): Promise<AuthResponse> => {
     try {
-      // Backend връща директно User обект (UserResponse)
-      const user = await api.post<User>('/auth/register', data);
+      const response = await api.post<AuthResponse>('/auth/register', data);
       
-      // Запазваме потребителя в localStorage
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      localStorage.setItem('isAuthenticated', 'true');
+      // Запази токена и потребителя
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
       
-      return { user };
+      return response;
     } catch (error: any) {
-      // Ако грешката е ApiError, пропускаме я нагоре
-      if (error.name === 'ApiError' || error instanceof Error) {
-        throw error;
+      console.error('Register error:', error);
+      
+      // Обработка на грешки
+      if (error.message && error.message.includes('Failed to fetch')) {
+        // Backend не е достъпен - използваме mock регистрация
+        console.warn('Backend не е наличен, използва се mock регистрация');
+        
+        // Създай mock потребител
+        const mockUser: User = {
+          id: Math.floor(Math.random() * 1000) + 1,
+          fullName: data.fullName,
+          email: data.email,
+          role: data.role,
+          createdAt: new Date().toISOString(),
+        };
+        
+        const mockToken = 'mock-token-' + Math.random().toString(36).substring(7);
+        
+        // Запази в localStorage
+        localStorage.setItem('token', mockToken);
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        
+        return {
+          token: mockToken,
+          user: mockUser,
+        };
       }
       
-      // Fallback към mock данни само ако backend не е наличен (network error)
-      console.warn('Backend не е наличен, създава се mock потребител');
-      
-      const newUser: User = {
-        id: Math.floor(Math.random() * 1000) + 100,
-        email: data.email,
-        fullName: data.fullName,
-        role: data.role,
-      };
-      
-      const mockResponse: LoginResponse = {
-        user: newUser,
-      };
-      
-      localStorage.setItem('currentUser', JSON.stringify(mockResponse.user));
-      localStorage.setItem('isAuthenticated', 'true');
-      
-      return mockResponse;
+      throw error;
     }
   },
 

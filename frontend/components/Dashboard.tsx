@@ -1,12 +1,12 @@
 import { DashboardHeader } from './DashboardHeader';
 import { Sidebar } from './Sidebar';
 import { PaymentsPanel } from './PaymentsPanel';
+import { PaymentsPage } from './PaymentsPage';
 import { EventsPanel } from './EventsPanel';
 import { MessagesPanel } from './MessagesPanel';
 import { AnnouncementsPanel } from './AnnouncementsPanel';
 import { useState } from 'react';
-
-type DashboardView = 'overview' | 'payments' | 'events' | 'messages' | 'profile';
+import { DashboardView } from '../types/views';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -22,7 +22,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
       <div className="flex">
         <Sidebar currentView={currentView} onViewChange={setCurrentView} />
         
-        <main className="flex-1 p-6 ml-64">
+        <main className="flex-1 p-6">
           {currentView === 'overview' && (
             <div className="space-y-6">
               <h1 className="text-gray-900">Преглед</h1>
@@ -39,12 +39,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
             </div>
           )}
           
-          {currentView === 'payments' && (
-            <div>
-              <h1 className="text-gray-900 mb-6">Плащания</h1>
-              <PaymentsPanel expanded />
-            </div>
-          )}
+          {currentView === 'payments' && <PaymentsPage />}
           
           {currentView === 'events' && (
             <div>
@@ -53,12 +48,12 @@ export function Dashboard({ onLogout }: DashboardProps) {
             </div>
           )}
           
-          {currentView === 'messages' && (
+          {/*currentView === 'messages' && (
             <div>
               <h1 className="text-gray-900 mb-6">Съобщения</h1>
               <MessagesPanel expanded />
             </div>
-          )}
+          )*/}
           
           {currentView === 'profile' && (
             <div>

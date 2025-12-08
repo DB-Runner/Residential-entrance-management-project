@@ -44,7 +44,6 @@ export const eventService = {
     try {
       return await api.get<Event[]>('/events');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни за събития');
       return MOCK_EVENTS;
     }
   },
@@ -54,7 +53,6 @@ export const eventService = {
     try {
       return await api.get<Event[]>('/events/upcoming');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни');
       const now = new Date();
       return MOCK_EVENTS.filter(event => new Date(event.eventDate) > now);
     }
@@ -65,7 +63,6 @@ export const eventService = {
     try {
       return await api.post<Event>('/events', data);
     } catch (error) {
-      console.warn('Backend не е наличен, използва се mock отговор');
       const newEvent: Event = {
         id: Math.floor(Math.random() * 1000) + 100,
         ...data,
@@ -83,7 +80,6 @@ export const eventService = {
     try {
       return await api.put<Event>(`/events/${id}`, data);
     } catch (error) {
-      console.warn('Backend не е наличен, използва се mock отговор');
       throw new Error('Събитието не може да бъде редактирано в момента');
     }
   },
@@ -93,7 +89,6 @@ export const eventService = {
     try {
       await api.delete(`/events/${id}`);
     } catch (error) {
-      console.warn('Backend не е наличен');
       throw new Error('Събитието не може да бъде изтрито в момента');
     }
   },

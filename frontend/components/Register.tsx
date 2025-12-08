@@ -14,8 +14,8 @@ export function Register() {
     email: '',
     password: '',
     confirmPassword: '',
-    /*buildingName: '',
-    apartment: ''*/
+    buildingCode: '',
+    apartment: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,13 +42,18 @@ export function Register() {
     try {
       const dbRole = role === 'admin' ? DBUserRole.ADMIN : DBUserRole.RESIDENT;
       
-      await authService.register({
+      const response = await authService.register({
         fullName: formData.name,
         email: formData.email,
         password: formData.password,
         role: dbRole,
-        /*unitNumber: role === 'resident' ? formData.apartment : undefined, */
+        unitNumber: role === 'resident' ? formData.apartment : undefined,
+        buildingCode: role === 'resident' ? formData.buildingCode : undefined,
       });
+
+      // Запази потребителя в localStorage за dashboard-а
+      localStorage.setItem('currentUser', JSON.stringify(response.user));
+      localStorage.setItem('isAuthenticated', 'true');
 
       // Успешна регистрация - пренасочваме към съответния dashboard
       if (role === 'admin') {
@@ -58,7 +63,7 @@ export function Register() {
       }
     } catch (err: any) {
       console.error('Registration error:', err);
-
+      
       // Обработка на различни типове грешки
       if (err.message) {
         // Ако грешката има съобщение, използваме го
@@ -66,6 +71,11 @@ export function Register() {
             err.message.toLowerCase().includes('вече съществува') ||
             err.message.toLowerCase().includes('email already in use')) {
           setError('Потребител с този имейл вече съществува. Моля, използвайте друг имейл или влезте в профила си.');
+        } else if (err.message.toLowerCase().includes('invalid code') ||
+                   err.message.toLowerCase().includes('невалиден код')) {
+          setError('Невалиден код за достъп. Моля, проверете кода и опитайте отново.');
+        } else if (err.message.toLowerCase().includes('failed to fetch')) {
+          setError('Не може да се свърже със сървъра. Моля, опитайте отново по-късно.');
         } else {
           setError(err.message);
         }
@@ -89,7 +99,7 @@ export function Register() {
               </div>
             </div>
             <h2 className="mb-2 text-gray-900">Създайте акаунт</h2>
-            <p className="text-gray-600">Присъединете се към платформата SmartEntrance</p>
+            <p className="text-gray-600">Присъединете се към платформата за жилищни входове</p>
           </div>
 
           {/* Съобщение за грешка */}
@@ -103,10 +113,8 @@ export function Register() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Избор на роля */}
             <div>
-              <label className="block mb-6 text-gray-700 text-center mx-auto">
-                <b>
-                  Регистрирам се като
-                </b>
+              <label className="block mb-2 text-gray-700">
+                Регистрирам се като
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -220,57 +228,62 @@ export function Register() {
               </div>
             </div>
 
-            {/*<div className="border-t pt-5 mt-5">
+            <div className="border-t pt-5 mt-5">
               <h3 className="mb-4 text-gray-900">
                 {role === 'admin' ? 'Информация за управление' : 'Информация за жилището'}
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            */}  
-                {/* Име на вход */}
-                {/*
-                <div>
-                  <label htmlFor="buildingName" className="block mb-2 text-gray-700">
-                    Име/адрес на вход
-                  </label>
-                  <div className="relative">
-                    <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              {role === 'resident' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Код на вход */}
+                  <div>
+                    <label htmlFor="buildingCode" className="block mb-2 text-gray-700">
+                      Код на вход <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        id="buildingCode"
+                        name="buildingCode"
+                        value={formData.buildingCode}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="123456"
+                        maxLength={6}
+                        required
+                      />
+                    </div>
+                    <p className="text-gray-500 text-sm mt-1">
+                      Кодът е получен от домоуправителя
+                    </p>
+                  </div>
+
+                  {/* Апартамент */}
+                  <div>
+                    <label htmlFor="apartment" className="block mb-2 text-gray-700">
+                      Номер на апартамент
+                    </label>
                     <input
                       type="text"
-                      id="buildingName"
-                      name="buildingName"
-                      value={formData.buildingName}
+                      id="apartment"
+                      name="apartment"
+                      value={formData.apartment}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="бул. Витоша 10"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="№ 12"
                       required
                     />
                   </div>
                 </div>
-                */}
-
-                {/* Апартамент */}
-                {/*
-                <div>
-                  <label htmlFor="apartment" className="block mb-2 text-gray-700">
-                    {role === 'admin' ? 'Брой апартаменти' : 'Номер на апартамент'}
-                  </label>
-                  <input
-                    type="text"
-                    id="apartment"
-                    name="apartment"
-                    value={formData.apartment}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={role === 'admin' ? '24' : '№ 12'}
-                    required
-                  />
+              ) : (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5">
+                  <p className="text-blue-700 text-sm">
+                    ℹ️ След регистрация ще получите уникален код, който трябва да споделите с жителите на входа си, за да могат те да се регистрират.
+                  </p>
                 </div>
-                */}
-            {/*
-              </div>
+              )}
             </div>
-            */}
 
             {/* Съгласие с условия */}
             <div className="flex items-start gap-2">
@@ -294,7 +307,7 @@ export function Register() {
             </button>
           </form>
 
-          {/* Линк към вход */}
+          {/* Линк към вхд */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Вече имате акаунт?{' '}

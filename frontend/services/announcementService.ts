@@ -51,7 +51,6 @@ export const announcementService = {
     try {
       return await api.get<Announcement[]>('/announcements');
     } catch (error) {
-      console.warn('Backend не е наличен, използват се mock данни за обяви');
       return MOCK_ANNOUNCEMENTS;
     }
   },
@@ -61,7 +60,6 @@ export const announcementService = {
     try {
       return await api.post<Announcement>('/announcements', data);
     } catch (error) {
-      console.warn('Backend не е наличен, използва се mock отговор');
       const newAnnouncement: Announcement = {
         id: Math.floor(Math.random() * 1000) + 100,
         ...data,
@@ -79,7 +77,6 @@ export const announcementService = {
     try {
       return await api.put<Announcement>(`/announcements/${id}`, data);
     } catch (error) {
-      console.warn('Backend не е наличен, използва се mock отговор');
       throw new Error('Обявата не може да бъде редактирана в момента');
     }
   },
@@ -89,7 +86,6 @@ export const announcementService = {
     try {
       await api.delete(`/announcements/${id}`);
     } catch (error) {
-      console.warn('Backend не е наличен');
       throw new Error('Обявата не може да бъде изтрита в момента');
     }
   },

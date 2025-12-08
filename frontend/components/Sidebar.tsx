@@ -1,6 +1,5 @@
-import { LayoutDashboard, Receipt, Calendar, MessageSquare, User } from 'lucide-react';
-
-type DashboardView = 'overview' | 'payments' | 'events' | 'messages' | 'profile';
+import { LayoutDashboard, Receipt, Calendar, /*MessageSquare,*/ User } from 'lucide-react';
+import { DashboardView } from '../types/views';
 
 interface SidebarProps {
   currentView: DashboardView;
@@ -11,13 +10,13 @@ const menuItems = [
   { id: 'overview' as DashboardView, label: 'Преглед', icon: LayoutDashboard },
   { id: 'payments' as DashboardView, label: 'Плащания', icon: Receipt },
   { id: 'events' as DashboardView, label: 'Събития', icon: Calendar },
-  { id: 'messages' as DashboardView, label: 'Съобщения', icon: MessageSquare },
+  /*{id: 'messages' as DashboardView, label: 'Съобщения', icon: MessageSquare},*/
   { id: 'profile' as DashboardView, label: 'Профил', icon: User },
 ];
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   return (
-    <aside className="w-64 mt-4 bg-white border-r min-h-[calc(100vh-73px)] fixed left-0 top-[73px]">
+    <aside className="w-64 bg-white border-r sticky top-[73px] h-[calc(100vh-73px)] self-start">
       <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {

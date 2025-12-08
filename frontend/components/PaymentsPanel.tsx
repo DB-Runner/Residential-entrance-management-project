@@ -1,57 +1,66 @@
 import { Receipt, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { paymentService } from '../services/paymentService';
+import type { UnitFeeWithDetails } from '../types/database';
+import { FundType } from '../types/database';
 
 interface PaymentsPanelProps {
   expanded?: boolean;
 }
 
-const payments = [
-  {
-    id: 1,
-    title: 'Такса поддръжка',
-    amount: 85.00,
-    dueDate: '2025-12-10',
-    status: 'pending' as const,
-    description: 'Месечна такса за декември'
-  },
-  {
-    id: 2,
-    title: 'Ток общи части',
-    amount: 12.50,
-    dueDate: '2025-12-10',
-    status: 'pending' as const,
-    description: 'Електричество ноември'
-  },
-  {
-    id: 3,
-    title: 'Такса поддръжка',
-    amount: 85.00,
-    paidDate: '2025-11-08',
-    status: 'paid' as const,
-    description: 'Месечна такса за ноември'
-  },
-  {
-    id: 4,
-    title: 'Ремонт асансьор',
-    amount: 45.00,
-    paidDate: '2025-10-15',
-    status: 'paid' as const,
-    description: 'Спешен ремонт'
-  },
-  {
-    id: 5,
-    title: 'Такса поддръжка',
-    amount: 85.00,
-    dueDate: '2025-10-01',
-    status: 'overdue' as const,
-    description: 'Месечна такса за октомври'
-  }
-];
-
 export function PaymentsPanel({ expanded = false }: PaymentsPanelProps) {
-  const displayPayments = expanded ? payments : payments.slice(0, 4);
-  const pendingTotal = payments
-    .filter(p => p.status === 'pending' || p.status === 'overdue')
-    .reduce((sum, p) => sum + p.amount, 0);
+  const [fees, setFees] = useState<UnitFeeWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    loadFees();
+  }, []);
+
+  const loadFees = async () => {
+    try {
+      setLoading(true);
+      const data = await paymentService.getMyFees();
+      setFees(data);
+    } catch (err) {
+      console.error('Error loading fees:', err);
+      setError('Грешка при зареждане на таксите');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const displayFees = expanded ? fees : fees.slice(0, 4);
+  const pendingTotal = fees
+    .filter(f => !f.isPaid)
+    .reduce((sum, f) => sum + f.amount, 0);
+
+  const getStatus = (fee: UnitFeeWithDetails) => {
+    if (fee.isPaid) return 'paid';
+    const dueDate = new Date(fee.dueTo);
+    const now = new Date();
+    return dueDate < now ? 'overdue' : 'pending';
+  };
+
+  const getFundName = (fundType: FundType) => {
+    return fundType === FundType.MAINTENANCE ? 'Фонд Поддръжка' : 'Фонд Ремонти';
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <p className="text-gray-600 text-center">Зареждане на плащания...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <p className="text-red-600 text-center">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -79,57 +88,70 @@ export function PaymentsPanel({ expanded = false }: PaymentsPanelProps) {
 
       {/* Списък с плащания */}
       <div className="divide-y">
-        {displayPayments.map((payment) => (
-          <div key={payment.id} className="p-4 hover:bg-gray-50 transition-colors">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-gray-900">{payment.title}</h3>
-                  {payment.status === 'paid' && (
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                  )}
-                  {payment.status === 'overdue' && (
-                    <AlertCircle className="w-4 h-4 text-red-500" />
-                  )}
-                  {payment.status === 'pending' && (
-                    <Clock className="w-4 h-4 text-orange-500" />
-                  )}
-                </div>
-                <p className="text-gray-600 text-sm mb-2">{payment.description}</p>
-                <div className="flex items-center gap-4 text-sm">
-                  {payment.status === 'paid' ? (
-                    <span className="text-green-600">
-                      Платено на {new Date(payment.paidDate!).toLocaleDateString('bg-BG')}
-                    </span>
-                  ) : payment.status === 'overdue' ? (
-                    <span className="text-red-600">
-                      Просрочено от {new Date(payment.dueDate!).toLocaleDateString('bg-BG')}
-                    </span>
-                  ) : (
-                    <span className="text-gray-600">
-                      Падеж: {new Date(payment.dueDate!).toLocaleDateString('bg-BG')}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className={`${
-                  payment.status === 'paid' ? 'text-gray-600' : 'text-gray-900'
-                }`}>
-                  {payment.amount.toFixed(2)} лв
-                </div>
-                {payment.status !== 'paid' && (
-                  <button className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
-                    Плати
-                  </button>
-                )}
-              </div>
-            </div>
+        {displayFees.length === 0 ? (
+          <div className="p-6 text-center text-gray-600">
+            Няма налични плащания
           </div>
-        ))}
+        ) : (
+          displayFees.map((fee) => {
+            const status = getStatus(fee);
+            return (
+              <div key={fee.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-gray-900">
+                        {getFundName(fee.fundType)} - {new Date(fee.month).toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' })}
+                      </h3>
+                      {status === 'paid' && (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      )}
+                      {status === 'overdue' && (
+                        <AlertCircle className="w-4 h-4 text-red-500" />
+                      )}
+                      {status === 'pending' && (
+                        <Clock className="w-4 h-4 text-orange-500" />
+                      )}
+                    </div>
+                    <p className="text-gray-600 text-sm mb-2">
+                      {fee.fundType === FundType.MAINTENANCE ? 'Месечна такса за поддръжка' : 'Месечна такса за ремонти'}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm">
+                      {status === 'paid' ? (
+                        <span className="text-green-600">
+                          Платено
+                        </span>
+                      ) : status === 'overdue' ? (
+                        <span className="text-red-600">
+                          Просрочено от {new Date(fee.dueTo).toLocaleDateString('bg-BG')}
+                        </span>
+                      ) : (
+                        <span className="text-gray-600">
+                          Падеж: {new Date(fee.dueTo).toLocaleDateString('bg-BG')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`${
+                      status === 'paid' ? 'text-gray-600' : 'text-gray-900'
+                    }`}>
+                      {fee.amount.toFixed(2)} лв
+                    </div>
+                    {status !== 'paid' && (
+                      <button className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
+                        Плати
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
-      {!expanded && payments.length > 4 && (
+      {!expanded && fees.length > 4 && (
         <div className="p-4 border-t">
           <button className="w-full text-center text-blue-600 hover:text-blue-700">
             Виж всички плащания
