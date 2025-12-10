@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class UserPrincipalLoader implements UserDetailsService {
@@ -17,7 +19,7 @@ public class UserPrincipalLoader implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findByEmail(email)
+        return Objects.requireNonNull(userRepository.findByEmail(email))
                 .map(UserPrincipal::new)
                 .orElseThrow(() -> new ResourceNotFoundException(User.class, "email", email));
     }

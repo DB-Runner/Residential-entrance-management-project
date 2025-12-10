@@ -37,12 +37,13 @@ public class AuthenticationService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        UserPrincipal userPrincipal = (UserPrincipal) auth.getPrincipal();
-        User user = userPrincipal.getUser();
+        if (auth.getPrincipal() instanceof UserPrincipal userPrincipal) {
+            String token = jwtService.generateToken(userPrincipal);
 
-        String token = jwtService.generateToken(userPrincipal);
-
-        return new LoginResponse(token, userMapper.toResponse(user));
+            return new LoginResponse(token, userMapper.toResponse(userPrincipal.user()));
+        } else {
+            throw new IllegalStateException("Unexpected principal type");
+        }
     }
 
     public UserResponse getCurrentUser() {

@@ -47,8 +47,8 @@ public class UserService{
             throw new IllegalStateException("No user logged in");
         }
 
-        if (authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
-            return userPrincipal.getUser();
+        if (authentication.getPrincipal() instanceof UserPrincipal(User user)) {
+            return user;
         }
 
         throw new IllegalStateException();

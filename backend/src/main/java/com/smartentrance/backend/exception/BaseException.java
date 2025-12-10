@@ -1,6 +1,5 @@
 package com.smartentrance.backend.exception;
 
-import lombok.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -29,13 +28,11 @@ public abstract class BaseException extends RuntimeException implements ErrorRes
     }
 
     @Override
-    @NonNull
     public HttpStatusCode getStatusCode() {
         return body.getStatus() != 0 ? HttpStatus.valueOf(body.getStatus()) : HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
     @Override
-    @NonNull
     public ProblemDetail getBody() {
         return body;
     }

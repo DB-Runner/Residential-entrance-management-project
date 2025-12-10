@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 @Component
 @RequiredArgsConstructor
 @Profile("dev")
@@ -19,7 +21,7 @@ public class DevDataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (userRepository.findByEmail("admin@dev.com").isEmpty()) {
+        if (Objects.requireNonNull(userRepository.findByEmail("admin@dev.com")).isEmpty()) {
 
             User admin = new User();
             admin.setFullName("Dev Admin");
