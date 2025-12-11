@@ -5,22 +5,35 @@ import { PaymentsPage } from './PaymentsPage';
 import { EventsPanel } from './EventsPanel';
 import { MessagesPanel } from './MessagesPanel';
 import { AnnouncementsPanel } from './AnnouncementsPanel';
-import { useState } from 'react';
-import { DashboardView } from '../types/views';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { DashboardView, dashboardViews } from '../types/views';
 
 interface DashboardProps {
   onLogout: () => void;
 }
 
 export function Dashboard({ onLogout }: DashboardProps) {
-  const [currentView, setCurrentView] = useState<DashboardView>('overview');
+  const { view } = useParams<{ view: string }>();
+  const navigate = useNavigate();
+  const currentView = (view as DashboardView) || 'overview';
 
+  // Validate view parameter
+  useEffect(() => {
+    if (view && !dashboardViews.includes(view as DashboardView)) {
+      navigate('/dashboard/overview', { replace: true });
+    }
+  }, [view, navigate]);
+
+  const handleViewChange = (newView: DashboardView) => {
+    navigate(`/dashboard/${newView}`);
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader onLogout={onLogout} />
       
       <div className="flex">
-          <Sidebar currentView={currentView} onViewChange={setCurrentView} />
+          <Sidebar currentView={currentView} onViewChange={handleViewChange} />
 
         <main className="flex-1 p-6 ml-64">
           {currentView === 'overview' && (

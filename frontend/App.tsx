@@ -30,17 +30,35 @@ export default function App() {
           } 
         />
         
-        {/* Защитени страници */}
+        {/* Защитени страници - Жители Dashboard */}
         <Route 
           path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Navigate to="/dashboard/overview" replace />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard/:view" 
           element={
             <ProtectedRoute>
               <DashboardPage />
             </ProtectedRoute>
           } 
         />
+        
+        {/* Защитени страници - Админ Dashboard */}
         <Route 
           path="/admin/dashboard" 
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <Navigate to="/admin/dashboard/overview" replace />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/dashboard/:view" 
           element={
             <ProtectedRoute requireAdmin={true}>
               <AdminDashboardPage />

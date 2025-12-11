@@ -7,18 +7,31 @@ import { EventsManagement } from './EventsManagement';
 import { AnnouncementsManagement } from './AnnouncementsManagement';
 import { BuildingRegistrationModal } from './BuildingRegistrationModal';
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { buildingService } from '../services/buildingService';
-import { AdminView } from '../types/views';
+import { AdminView, adminViews } from '../types/views';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [currentView, setCurrentView] = useState<AdminView>('overview');
+  const { view } = useParams<{ view: string }>();
+  const navigate = useNavigate();
+  const currentView = (view as AdminView) || 'overview';
   const [showBuildingModal, setShowBuildingModal] = useState(false);
   const [checkingBuilding, setCheckingBuilding] = useState(true);
   const [newBuildingCode, setNewBuildingCode] = useState<string | null>(null);
+
+    useEffect(() => {
+    if (view && !adminViews.includes(view as AdminView)) {
+      navigate('/admin/dashboard/overview', { replace: true });
+    }
+  }, [view, navigate]);
+
+  const handleViewChange = (newView: AdminView) => {
+    navigate(`/admin/dashboard/${newView}`);
+  };
 
   useEffect(() => {
     checkForNewBuildingCode();
@@ -73,7 +86,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <DashboardHeader onLogout={onLogout} isAdmin />
 
       <div className="flex">
-        <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
+        <AdminSidebar currentView={currentView} onViewChange={handleViewChange} />
         
         <main className="flex-1 p-6 ml-64">
           {currentView === 'overview' && <AdminOverview />}
