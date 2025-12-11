@@ -2,4 +2,4 @@
 export type DashboardView = 'overview' | 'payments' | 'events' | 'profile';
 
 // Admin view types
-export type AdminView = 'overview' | 'residents' | 'payments' | 'events'  | 'reports';
+export type AdminView = 'overview' | 'apartments' | 'payments' | 'events' | 'announcements' | 'reports';

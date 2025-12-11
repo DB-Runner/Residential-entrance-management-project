@@ -20,9 +20,9 @@ export function Dashboard({ onLogout }: DashboardProps) {
       <DashboardHeader onLogout={onLogout} />
       
       <div className="flex">
-        <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-        
-        <main className="flex-1 p-6">
+          <Sidebar currentView={currentView} onViewChange={setCurrentView} />
+
+        <main className="flex-1 p-6 ml-64">
           {currentView === 'overview' && (
             <div className="space-y-6">
               <h1 className="text-gray-900">Преглед</h1>

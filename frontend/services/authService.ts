@@ -1,5 +1,5 @@
 import { api } from '../config/api';
-import type { User, UserRole } from '../types/database';
+import { UserRole, type User } from '../types/database';
 
 export interface LoginRequest {
   email: string;
@@ -17,11 +17,15 @@ export interface RegisterRequest {
   role: UserRole;
   unitNumber?: string;
   buildingCode?: string;
+  buildingName?: string;
+  buildingAddress?: string;
+  totalUnits?: number;
 }
 
 export interface AuthResponse {
   token: string;
   user: User;
+  buildingCode?: string;
 }
 
 // Mock данни за демонстрация (използва се когато backend не е наличен)
@@ -32,7 +36,7 @@ const MOCK_USERS: Record<string, { password: string; user: User }> = {
       id: 1,
       email: 'resident@test.com',
       fullName: 'Иван Петров',
-      role: 'RESIDENT' as UserRole,
+      role: UserRole.RESIDENT,
     },
   },
   'admin@test.com': {
@@ -41,7 +45,7 @@ const MOCK_USERS: Record<string, { password: string; user: User }> = {
       id: 2,
       email: 'admin@test.com',
       fullName: 'Мария Георгиева',
-      role: 'ADMIN' as UserRole,
+      role: UserRole.ADMIN,
     },
   },
 };
@@ -50,12 +54,24 @@ export const authService = {
   // Вход
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     try {
-      // Backend връща директно User обект (UserResponse)
+      console.log('Sending login request to backend:', credentials.email);
       const user = await api.post<User>('/auth/login', credentials);
       
-      // Запазваме потребителя в localStorage
+      console.log('Backend login response:', user);
+      
+      // Генерираме mock token
+      const mockToken = 'mock-token-' + Math.random().toString(36).substring(7);
+      
+      // Запазваме потребителя и токена в localStorage
+      localStorage.setItem('token', mockToken);
       localStorage.setItem('currentUser', JSON.stringify(user));
       localStorage.setItem('isAuthenticated', 'true');
+      
+      console.log('LocalStorage updated after login:', {
+        token: mockToken,
+        user: user,
+        isAuthenticated: localStorage.getItem('isAuthenticated'),
+      });
       
       return { user };
     } catch (error: any) {
@@ -73,12 +89,21 @@ export const authService = {
       
       const mockUser = MOCK_USERS[credentials.email];
       if (mockUser && mockUser.password === credentials.password) {
+        const mockToken = 'mock-token-' + Math.random().toString(36).substring(7);
+        
         const mockResponse: LoginResponse = {
           user: mockUser.user,
         };
         
+        localStorage.setItem('token', mockToken);
         localStorage.setItem('currentUser', JSON.stringify(mockResponse.user));
         localStorage.setItem('isAuthenticated', 'true');
+        
+        console.log('LocalStorage updated after mock login:', {
+          token: mockToken,
+          user: mockResponse.user,
+          isAuthenticated: localStorage.getItem('isAuthenticated'),
+        });
         
         return mockResponse;
       }
@@ -89,14 +114,39 @@ export const authService = {
 
   // Регистрация
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
+    console.log('Starting registration with mock token');
+    
     try {
-      const response = await api.post<AuthResponse>('/auth/register', data);
+      console.log('Sending registration request to backend:', data);
+      const user = await api.post<User>('/auth/register', data);
       
-      // Запази токена и потребителя
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      console.log('Backend registration response:', user);
       
-      return response;
+      // Backend връща само User, генерираме mock token
+      const mockToken = 'mock-token-' + Math.random().toString(36).substring(7);
+      
+      // Генерираме код за домоуправител
+      let mockBuildingCode: string | undefined = undefined;
+      if (data.role === UserRole.ADMIN) {
+        mockBuildingCode = Math.floor(100000 + Math.random() * 900000).toString();
+      }
+      
+      // Запази токена и потребителя с правилните ключове
+      localStorage.setItem('token', mockToken);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      localStorage.setItem('isAuthenticated', 'true');
+      
+      console.log('LocalStorage updated after registration:', {
+        token: mockToken,
+        user: user,
+        isAuthenticated: localStorage.getItem('isAuthenticated'),
+      });
+      
+      return {
+        token: mockToken,
+        user: user,
+        buildingCode: mockBuildingCode,
+      };
     } catch (error: any) {
       console.error('Register error:', error);
       
@@ -116,13 +166,27 @@ export const authService = {
         
         const mockToken = 'mock-token-' + Math.random().toString(36).substring(7);
         
-        // Запази в localStorage
+        // Генерирай код за домоуправител
+        let mockBuildingCode: string | undefined = undefined;
+        if (data.role === UserRole.ADMIN) {
+          mockBuildingCode = Math.floor(100000 + Math.random() * 900000).toString();
+        }
+        
+        // Запази в localStorage с правилните ключове
         localStorage.setItem('token', mockToken);
-        localStorage.setItem('user', JSON.stringify(mockUser));
+        localStorage.setItem('currentUser', JSON.stringify(mockUser));
+        localStorage.setItem('isAuthenticated', 'true');
+        
+        console.log('LocalStorage updated after mock registration:', {
+          token: mockToken,
+          user: mockUser,
+          isAuthenticated: localStorage.getItem('isAuthenticated'),
+        });
         
         return {
           token: mockToken,
           user: mockUser,
+          buildingCode: mockBuildingCode,
         };
       }
       
@@ -134,6 +198,8 @@ export const authService = {
   logout: () => {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('token');
+    localStorage.removeItem('newBuildingCode');
     // Евентуално можете да добавите API заявка за logout към backend-а
   },
 

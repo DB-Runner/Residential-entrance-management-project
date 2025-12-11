@@ -16,8 +16,8 @@ const menuItems = [
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   return (
-    <aside className="w-64 bg-white border-r sticky top-[73px] h-[calc(100vh-73px)] self-start">
-      <nav className="p-4">
+    <aside className="w-64 bg-white border-r h-screen fixed left-0 top-0 overflow-y-auto">
+      <nav className="p-4 pt-25">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;

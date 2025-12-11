@@ -1,7 +1,7 @@
 import { DashboardHeader } from './DashboardHeader';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminOverview } from './AdminOverview';
-import { ResidentsManagement } from './ResidentsManagement';
+import { ApartmentsManagement } from './ApartmentsManagement';
 import { PaymentsManagement } from './PaymentsManagement';
 import { EventsManagement } from './EventsManagement';
 import { AnnouncementsManagement } from './AnnouncementsManagement';
@@ -18,15 +18,19 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [currentView, setCurrentView] = useState<AdminView>('overview');
   const [showBuildingModal, setShowBuildingModal] = useState(false);
   const [checkingBuilding, setCheckingBuilding] = useState(true);
+  const [newBuildingCode, setNewBuildingCode] = useState<string | null>(null);
 
   useEffect(() => {
-    checkBuildingStatus();
+    checkForNewBuildingCode();
   }, []);
 
   const checkBuildingStatus = async () => {
     try {
       const hasBuilding = await buildingService.hasBuilding();
-      setShowBuildingModal(!hasBuilding);
+      // Само показваме модала ако няма сграда И няма нов код
+      if (!hasBuilding && !newBuildingCode) {
+        setShowBuildingModal(true);
+      }
     } catch (err) {
       console.error('Error checking building status:', err);
     } finally {
@@ -34,9 +38,26 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
+  const checkForNewBuildingCode = async () => {
+    const code = localStorage.getItem('newBuildingCode');
+    if (code) {
+      setNewBuildingCode(code);
+      setShowBuildingModal(true);
+      setCheckingBuilding(false);
+      // Премахни кода от localStorage след като го прочетем
+      localStorage.removeItem('newBuildingCode');
+    } else {
+      // Само ако няма нов код, проверяваме статуса на сградата
+      await checkBuildingStatus();
+    }
+  };
+
   const handleBuildingRegistrationComplete = (code: string) => {
     console.log('Building registered with code:', code);
+    // Запази кода в localStorage за бъдещи проверки
+    localStorage.setItem('buildingCode', code);
     setShowBuildingModal(false);
+    setNewBuildingCode(null);
   };
 
   if (checkingBuilding) {
@@ -49,17 +70,17 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader onLogout={onLogout} isAdmin />
-      
+        <DashboardHeader onLogout={onLogout} isAdmin />
+
       <div className="flex">
         <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
         
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 ml-64">
           {currentView === 'overview' && <AdminOverview />}
-          {currentView === 'residents' && <ResidentsManagement />}
+          {currentView === 'apartments' && <ApartmentsManagement />}
           {currentView === 'payments' && <PaymentsManagement />}
           {currentView === 'events' && <EventsManagement />}
-          {/*currentView === 'announcements' && <AnnouncementsManagement />*/}
+          {currentView === 'announcements' && <AnnouncementsManagement />}
           {currentView === 'reports' && (
             <div>
               <h1 className="text-gray-900 mb-6">Отчети</h1>
@@ -73,7 +94,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       {/* Building Registration Modal */}
       {showBuildingModal && (
-        <BuildingRegistrationModal onComplete={handleBuildingRegistrationComplete} />
+        <BuildingRegistrationModal 
+          onComplete={handleBuildingRegistrationComplete}
+          existingCode={newBuildingCode}
+        />
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Receipt, Calendar, /*Megaphone,*/ FileText } from 'lucide-react';
+import { LayoutDashboard, Building2, Receipt, Calendar, /*Megaphone,*/ FileText } from 'lucide-react';
 import { AdminView } from '../types/views';
 
 interface AdminSidebarProps {
@@ -8,17 +8,17 @@ interface AdminSidebarProps {
 
 const menuItems = [
   { id: 'overview' as AdminView, label: 'Преглед', icon: LayoutDashboard },
-  { id: 'residents' as AdminView, label: 'Жители', icon: Users },
+  { id: 'apartments' as AdminView, label: 'Апартаменти', icon: Building2 },
   { id: 'payments' as AdminView, label: 'Плащания', icon: Receipt },
   { id: 'events' as AdminView, label: 'Събития', icon: Calendar },
-  /*{ id: 'announcements' as AdminView, label: 'Обяви', icon: Megaphone },*/
+  /*{ id: 'announcements' as AdminView, label: 'Обяви', icon: Megaphone}, */
   { id: 'reports' as AdminView, label: 'Отчети', icon: FileText },
 ];
 
 export function AdminSidebar({ currentView, onViewChange }: AdminSidebarProps) {
   return (
-    <aside className="w-64 bg-white border-r sticky top-[73px] h-[calc(100vh-73px)] self-start">
-      <nav className="p-4">
+    <aside className="w-64 bg-white border-r h-screen fixed left-0 top-0 overflow-y-auto">
+      <nav className="p-4 pt-25">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;

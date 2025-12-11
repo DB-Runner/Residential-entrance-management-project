@@ -1,4 +1,4 @@
-import { Building2, Mail, Lock, User, Home, Shield, UserCircle } from 'lucide-react';
+import { Building2, Mail, Lock, User, Home, Shield, UserCircle, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -15,7 +15,10 @@ export function Register() {
     password: '',
     confirmPassword: '',
     buildingCode: '',
-    apartment: ''
+    apartment: '',
+    buildingName: '',
+    buildingAddress: '',
+    totalUnits: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,6 +45,8 @@ export function Register() {
     try {
       const dbRole = role === 'admin' ? DBUserRole.ADMIN : DBUserRole.RESIDENT;
       
+      console.log('Starting registration for role:', dbRole);
+      
       const response = await authService.register({
         fullName: formData.name,
         email: formData.email,
@@ -49,16 +54,26 @@ export function Register() {
         role: dbRole,
         unitNumber: role === 'resident' ? formData.apartment : undefined,
         buildingCode: role === 'resident' ? formData.buildingCode : undefined,
+        buildingName: role === 'admin' ? formData.buildingName : undefined,
+        buildingAddress: role === 'admin' ? formData.buildingAddress : undefined,
+        totalUnits: role === 'admin' ? parseInt(formData.totalUnits) : undefined,
       });
 
-      // Запази потребителя в localStorage за dashboard-а
-      localStorage.setItem('currentUser', JSON.stringify(response.user));
-      localStorage.setItem('isAuthenticated', 'true');
+      console.log('Registration successful:', response);
+      console.log('isAuthenticated:', localStorage.getItem('isAuthenticated'));
+      console.log('currentUser:', localStorage.getItem('currentUser'));
 
-      // Успешна регистрация - пренасочваме към съответния dashboard
+      // Успешна регистрация
       if (role === 'admin') {
+        // За домоуправител - запази кода и пренасочи към dashboard
+        if (response.buildingCode) {
+          localStorage.setItem('newBuildingCode', response.buildingCode);
+        }
+        console.log('Navigating to /admin/dashboard');
         navigate('/admin/dashboard');
       } else {
+        // За жител - пренасочи към dashboard
+        console.log('Navigating to /dashboard');
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -230,7 +245,7 @@ export function Register() {
 
             <div className="border-t pt-5 mt-5">
               <h3 className="mb-4 text-gray-900">
-                {role === 'admin' ? 'Информация за управление' : 'Информация за жилището'}
+                {role === 'admin' ? 'Информация за входа' : 'Информация за жилището'}
               </h3>
               
               {role === 'resident' ? (
@@ -277,15 +292,69 @@ export function Register() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-5">
-                  <p className="text-blue-700 text-sm">
-                    ℹ️ След регистрация ще получите уникален код, който трябва да споделите с жителите на входа си, за да могат те да се регистрират.
-                  </p>
+                <div className="space-y-5">
+                  {/* Име на входа */}
+                  <div>
+                    <label htmlFor="buildingName" className="block mb-2 text-gray-700">
+                      Име на входа/сградата <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        id="buildingName"
+                        name="buildingName"
+                        value={formData.buildingName}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Например: Вход А, Сграда 1"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Адрес */}
+                  <div>
+                    <label htmlFor="buildingAddress" className="block mb-2 text-gray-700">
+                      Адрес <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        id="buildingAddress"
+                        name="buildingAddress"
+                        value={formData.buildingAddress}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="бул. Витоша 10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Брой апартаменти */}
+                  <div>
+                    <label htmlFor="totalUnits" className="block mb-2 text-gray-700">
+                      Брой апартаменти <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      id="totalUnits"
+                      name="totalUnits"
+                      value={formData.totalUnits}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="24"
+                      min="1"
+                      required
+                    />
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Съгласие с условия */}
+            {/* Съгласе с условия */}
             <div className="flex items-start gap-2">
               <input
                 type="checkbox"
