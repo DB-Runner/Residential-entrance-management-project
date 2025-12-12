@@ -24,7 +24,6 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  token: string;
   user: User;
   buildingCode?: string;
 }
@@ -60,7 +59,6 @@ export const authService = {
     localStorage.setItem('isAuthenticated', 'true');
     
     return {
-      token: '', // Backend не връща token засега
       user: user,
       buildingCode: buildingCode,
     };
@@ -77,7 +75,6 @@ export const authService = {
       // Винаги изчистваме локалната сесия
       localStorage.removeItem('currentUser');
       localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('token');
       localStorage.removeItem('newBuildingCode');
     }
   },
@@ -93,7 +90,6 @@ export const authService = {
       // Ако заявката не успее, изчистваме сесията
       localStorage.removeItem('currentUser');
       localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('token');
       throw error;
     }
   },
