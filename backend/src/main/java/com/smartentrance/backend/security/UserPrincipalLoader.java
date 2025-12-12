@@ -1,5 +1,6 @@
 package com.smartentrance.backend.security;
 
+import com.smartentrance.backend.exception.ResourceNotFoundException;
 import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ public class UserPrincipalLoader implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userService.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException(User.class, "email", email));
         return new UserPrincipal(user);
     }
 }

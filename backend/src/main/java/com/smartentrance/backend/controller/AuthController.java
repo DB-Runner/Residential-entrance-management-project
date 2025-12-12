@@ -4,6 +4,7 @@ import com.smartentrance.backend.dto.LoginRequest;
 import com.smartentrance.backend.dto.LoginResponse;
 import com.smartentrance.backend.dto.RegisterUserRequest;
 import com.smartentrance.backend.dto.UserResponse;
+import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.security.JwtService;
 import com.smartentrance.backend.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import java.net.URI;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -24,14 +27,14 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterUserRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {
         LoginResponse loginResponse = authService.register(request);
 
         ResponseCookie cookie = jwtService.generateCookie(loginResponse.getToken());
 
-        return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.created(URI.create("/api/auth/me"))
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .build();
+                .body(loginResponse.getUser());
     }
 
     @PostMapping("/login")

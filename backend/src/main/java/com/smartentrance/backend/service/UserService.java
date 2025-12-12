@@ -40,7 +40,11 @@ public class UserService{
         return userRepository.save(user);
     }
 
-    @Cacheable(value = "users", key = "#email")
+    @Cacheable(
+        value = "users",
+        key = "#email",
+        unless = "#result == null"
+    )
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
