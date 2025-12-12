@@ -1,119 +1,139 @@
-import { api } from '../config/api';
-import { UserRole, type User } from '../types/database';
+import { Building2, Mail, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { authService } from '../services/authService';
+import { UserRole as DBUserRole } from '../types/database';
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
-}
+export function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-export interface LoginResponse {
-  user: User;
-}
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-export interface RegisterRequest {
-  fullName: string;
-  email: string;
-  password: string;
-  role: UserRole;
-  unitNumber?: string;
-  buildingCode?: string;
-  buildingName?: string;
-  buildingAddress?: string;
-  totalUnits?: number;
-}
-
-export interface AuthResponse {
-  token?: string; // Токенът е в HTTP-only cookie, не в response body
-  user: User;
-  buildingCode?: string;
-}
-
-export const authService = {
-  // Вход
-  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    // Backend връща user данни и JWT токен в HTTP-only cookie
-    const user = await api.post<User>('/auth/login', credentials);
-    
-    // Запазваме потребителя в localStorage
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    localStorage.setItem('isAuthenticated', 'true');
-    
-    return { user };
-  },
-
-  // Регистрация
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    // Регистрираме потребителя (JWT токенът се връща автоматично в HTTP-only cookie)
-    await api.post<User>('/auth/register', data);
-    
-    // След успешна регистрация, вземаме пълните user данни
-    const user = await api.get<User>('/auth/me');
-    
-    // Генерираме код за домоуправител (временно - докато backend не го върне)
-    let buildingCode: string | undefined = undefined;
-    if (user.role === UserRole.BUILDING_MANAGER) {
-      buildingCode = Math.floor(100000 + Math.random() * 900000).toString();
-    }
-    
-    // Запази потребителя в localStorage
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    localStorage.setItem('isAuthenticated', 'true');
-    
-    return {
-      user: user,
-      buildingCode: buildingCode,
-    };
-  },
-
-  // Изход
-  logout: async () => {
     try {
-      // Опит за извикване на backend logout endpoint
-      await api.post('/auth/logout', {});
-    } catch (error) {
-      console.warn('Backend logout failed, clearing local session');
+      const response = await authService.login({ email, password });
+      
+      // Пренасочваме към съответния dashboard според ролята
+      if (response.user.role === DBUserRole.BUILDING_MANAGER) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Грешен имейл или парола. Моля опитайте отново.');
     } finally {
-      // Винаги изчистваме локалната сесия
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('newBuildingCode');
+      setLoading(false);
     }
-  },
+  };
 
-  // Вземи текущия потребител от backend
-  me: async (): Promise<User> => {
-    try {
-      const user = await api.get<User>('/auth/me');
-      // Актуализираме localStorage с актуалните данни
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      return user;
-    } catch (error) {
-      // Ако заявката не успее, изчистваме сесията
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('isAuthenticated');
-      throw error;
-    }
-  },
+  return (
+    <div className="py-20 px-4 bg-gradient-to-b from-blue-50 to-white min-h-[calc(100vh-200px)] flex items-center">
+      <div className="container mx-auto max-w-md">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* Лого и заглавие */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Building2 className="w-8 h-8 text-blue-600" />
+              </div>
+            </div>
+            <h2 className="mb-2 text-gray-900">Добре дошли</h2>
+            <p className="text-gray-600">Влезте във вашия акаунт</p>
+          </div>
 
-  // Вземи текущия потребител от localStorage
-  getCurrentUser: (): User | null => {
-    const userStr = localStorage.getItem('currentUser');
-    if (!userStr) return null;
-    try {
-      return JSON.parse(userStr);
-    } catch {
-      return null;
-    }
-  },
+          {/* Съобщение за грешка */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
 
-  // Проверка дали има активна сесия
-  isAuthenticated: (): boolean => {
-    return localStorage.getItem('isAuthenticated') === 'true';
-  },
+          {/* Форма за вход */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block mb-2 text-gray-700">
+                Имейл адрес
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="vashemail@example.com"
+                  required
+                />
+              </div>
+            </div>
 
-  // Обнови текущия потребител в localStorage
-  updateCurrentUser: (user: User) => {
-    localStorage.setItem('currentUser', JSON.stringify(user));
-  },
-};
+            <div>
+              <label htmlFor="password" className="block mb-2 text-gray-700">
+                Парола
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-gray-700">Запомни ме</span>
+              </label>
+              {/*}
+              <button
+                type="button"
+                className="text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                Забравена парола?
+              </button>
+              */}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Влизане...' : 'Вход'}
+            </button>
+          </form>
+
+          {/* Линк към регистрация */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600">
+              Нямате акаунт?{' '}
+              <Link
+                to="/register"
+                className="text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                Регистрирайте се
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
