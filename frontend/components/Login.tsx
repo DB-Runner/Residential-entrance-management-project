@@ -20,7 +20,7 @@ export function Login() {
       const response = await authService.login({ email, password });
       
       // Пренасочваме към съответния dashboard според ролята
-      if (response.user.role === DBUserRole.ADMIN) {
+      if (response.user.role === DBUserRole.BUILDING_MANAGER) {
         navigate('/admin/dashboard');
       } else {
         navigate('/dashboard');

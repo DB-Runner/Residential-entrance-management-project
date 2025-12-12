@@ -1,5 +1,8 @@
 import { Building2, Bell, User, LogOut, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { authService } from '../services/authService';
+import { UserRole } from '../types/database';
+import type { User as UserType } from '../types/database';
 
 interface DashboardHeaderProps {
   onLogout: () => void;
@@ -8,6 +11,31 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderProps) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Зареди текущия потребител от backend
+    const loadUser = async () => {
+      try {
+        const user = await authService.me();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Failed to load user:', error);
+        // Fallback към localStorage
+        const user = authService.getCurrentUser();
+        setCurrentUser(user);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadUser();
+  }, []);
+
+  // Определи ролята на потребителя
+  const userRoleLabel = currentUser?.role === UserRole.BUILDING_MANAGER ? 'Домоуправител' : 'Жител';
+  const isBuildingManager = currentUser?.role === UserRole.BUILDING_MANAGER;
 
   return (
     <header className="bg-white border-b sticky top-0 z-50">
@@ -18,7 +46,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
           <div>
             <span className="text-blue-600 block"><b>SmartEntrance</b></span>
             <span className="text-gray-500 text-sm">
-              {isAdmin ? 'Панел за управление' : 'бул. Витоша 10, вх. А'}
+              {isBuildingManager ? 'Панел за управление' : 'бул. Витоша 10, вх. А'}
             </span>
           </div>
         </div>
@@ -42,10 +70,10 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
               </div>
               <div className="text-left hidden md:block">
                 <div className="text-gray-900">
-                  {isAdmin ? 'Елена Димитрова' : 'Иван Иванов'}
+                  {currentUser?.fullName || 'Потребител'}
                 </div>
                 <div className="text-gray-500 text-sm">
-                  {isAdmin ? 'Домоуправител' : 'Ап. 12'}
+                  {userRoleLabel}
                 </div>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-600" />

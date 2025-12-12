@@ -11,3 +11,18 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: create
+  #profiles:
+    #active: dev
+
+logging:
+  level:
+    org.springframework.cache: TRACE
+
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET}
+      expiration: 86400000       # 1 day (Short term)
+      cookie-name: accessToken
+      secure-cookie: false       # Set to true in production with HTTPS
