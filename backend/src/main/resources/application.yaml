@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: smart-entrance-backend
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+  #profiles:
+    #active: dev
+
+logging:
+  level:
+    org.springframework.cache: TRACE
+
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET}
+      expiration: 86400000       # 1 day (Short term)
+      cookie-name: accessToken
+      secure-cookie: false       # Set to true in production with HTTPS
