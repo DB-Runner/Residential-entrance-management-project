@@ -1,66 +1,60 @@
 package com.smartentrance.backend.controller;
 
 import com.smartentrance.backend.dto.LoginRequest;
+import com.smartentrance.backend.dto.LoginResponse;
 import com.smartentrance.backend.dto.RegisterUserRequest;
 import com.smartentrance.backend.dto.UserResponse;
-import com.smartentrance.backend.model.User;
-import com.smartentrance.backend.repository.UserRepository;
-import com.smartentrance.backend.service.UserService;
-import jakarta.validation.Valid;
+import com.smartentrance.backend.security.JwtService;
+import com.smartentrance.backend.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationService authService;
+    private final JwtService jwtService;
 
-    // ---------------- REGISTER ----------------
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody RegisterUserRequest request) {
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterUserRequest request) {
+        LoginResponse loginResponse = authService.register(request);
 
-        User user = new User();
-        user.setFullName(request.getFullName());
-        user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
-        user.setRole(request.getRole());
+        ResponseCookie cookie = jwtService.generateCookie(loginResponse.getToken());
 
-        User savedUser = userService.registerUser(user);
-
-        UserResponse response = new UserResponse();
-        response.setId(savedUser.getId());
-        response.setEmail(savedUser.getEmail());
-        response.setFullName(savedUser.getFullName());
-        response.setRole(savedUser.getRole());
-
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
     }
 
-    // ---------------- LOGIN ----------------
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<UserResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse loginResponse = authService.login(request);
 
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        ResponseCookie cookie = jwtService.generateCookie(loginResponse.getToken());
 
-        // Проверка на паролата
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getHashedPassword())) {
-            return ResponseEntity.status(401).body("Invalid email or password");
-        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(loginResponse.getUser());
+    }
 
-        UserResponse response = new UserResponse();
-        response.setId(user.getId());
-        response.setEmail(user.getEmail());
-        response.setFullName(user.getFullName());
-        response.setRole(user.getRole());
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtService.getCleanCookie().toString())
+                .build();
+    }
 
-        return ResponseEntity.ok(response);
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponse> getCurrentUser() {
+        return ResponseEntity.ok(authService.getCurrentUser());
     }
 }

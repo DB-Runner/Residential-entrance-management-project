@@ -1,7 +1,7 @@
 // Database types matching Java backend models
 
 export enum UserRole {
-  ADMIN = 'BUILDING_MANAGER',
+  BUILDING_MANAGER = 'BUILDING_MANAGER',
   RESIDENT = 'RESIDENT'
 }
 

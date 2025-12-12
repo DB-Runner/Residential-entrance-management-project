@@ -26,7 +26,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
-  if (requireAdmin && user.role !== DBUserRole.ADMIN) {
+  if (requireAdmin && user.role !== DBUserRole.BUILDING_MANAGER) {
     console.log('User is not admin, redirecting to /dashboard');
     return <Navigate to="/dashboard" replace />;
   }

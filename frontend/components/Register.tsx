@@ -43,7 +43,7 @@ export function Register() {
     setLoading(true);
 
     try {
-      const dbRole = role === 'admin' ? DBUserRole.ADMIN : DBUserRole.RESIDENT;
+      const dbRole = role === 'admin' ? DBUserRole.BUILDING_MANAGER : DBUserRole.RESIDENT;
       
       console.log('Starting registration for role:', dbRole);
       
@@ -62,9 +62,10 @@ export function Register() {
       console.log('Registration successful:', response);
       console.log('isAuthenticated:', localStorage.getItem('isAuthenticated'));
       console.log('currentUser:', localStorage.getItem('currentUser'));
+      console.log('User role from response:', response.user.role);
 
-      // Успешна регистрация
-      if (role === 'admin') {
+      // Успешна регистрация - използваме ролята от backend response
+      if (response.user.role === DBUserRole.BUILDING_MANAGER) {
         // За домоуправител - запази кода и пренасочи към dashboard
         if (response.buildingCode) {
           localStorage.setItem('newBuildingCode', response.buildingCode);
