@@ -37,12 +37,9 @@ public class DevController {
                     return userService.createUser(newUser);
                 });
 
-        String token = jwtService.generateToken(
-                new UserPrincipal(admin),
-                1000L * 60 * 60 * 24 * 7
-        );
+        String token = jwtService.generateToken(new UserPrincipal(admin), true);
 
-        ResponseCookie cookie = jwtService.generateCookie(token);
+        ResponseCookie cookie = jwtService.generateCookie(token, true);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())

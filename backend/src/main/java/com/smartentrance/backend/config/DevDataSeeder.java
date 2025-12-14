@@ -30,7 +30,7 @@ public class DevDataSeeder implements CommandLineRunner {
             admin.setHashedPassword(passwordEncoder.encode("password"));
             admin.setRole(UserRole.BUILDING_MANAGER);
 
-            userService.save(admin);
+            userService.createUser(admin);
             System.out.println("DEV ADMIN USER CREATED: admin@dev.com / password");
         }
     }

@@ -1,17 +1,20 @@
 package com.smartentrance.backend.service;
 
-import com.smartentrance.backend.dto.LoginRequest;
-import com.smartentrance.backend.dto.LoginResponse;
-import com.smartentrance.backend.dto.RegisterUserRequest;
-import com.smartentrance.backend.dto.UserResponse;
+import com.smartentrance.backend.dto.request.LoginRequest;
+import com.smartentrance.backend.dto.response.LoginResponse;
+import com.smartentrance.backend.dto.request.RegisterUserRequest;
+import com.smartentrance.backend.dto.response.UserResponse;
 import com.smartentrance.backend.mapper.UserMapper;
 import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.security.JwtService;
 import com.smartentrance.backend.security.UserPrincipal;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +22,7 @@ import org.springframework.stereotype.Service;
 public class AuthenticationService {
 
     private final UserService userService;
-    private final JwtService jwtService; // Използваме новия сървиз
+    private final JwtService jwtService;
     private final UserMapper userMapper;
     private final AuthenticationManager authenticationManager;
 
@@ -27,7 +30,7 @@ public class AuthenticationService {
         User userDraft = userMapper.toEntity(request);
         User savedUser = userService.createUser(userDraft);
 
-        String token = jwtService.generateToken(new UserPrincipal(savedUser));
+        String token = jwtService.generateToken(new UserPrincipal(savedUser), request.isRememberMe());
 
         return new LoginResponse(token, userMapper.toResponse(savedUser));
     }
@@ -38,7 +41,7 @@ public class AuthenticationService {
         );
 
         if (auth.getPrincipal() instanceof UserPrincipal userPrincipal) {
-            String token = jwtService.generateToken(userPrincipal);
+            String token = jwtService.generateToken(userPrincipal, request.isRememberMe());
 
             return new LoginResponse(token, userMapper.toResponse(userPrincipal.user()));
         } else {
@@ -46,8 +49,19 @@ public class AuthenticationService {
         }
     }
 
-    public UserResponse getCurrentUser() {
-        User currentUser = userService.getCurrentUser();
-        return userMapper.toResponse(currentUser);
+    public UserResponse getAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated() || !(auth.getPrincipal() instanceof UserPrincipal principal)) {
+            throw new BadCredentialsException("Invalid session or token");
+        }
+
+        try {
+            Integer userId = principal.user().getId();
+            User user = userService.getUserById(userId);
+            return userMapper.toResponse(user);
+        } catch (EntityNotFoundException e) {
+            throw new BadCredentialsException("User session invalid (user deleted)");
+        }
     }
 }

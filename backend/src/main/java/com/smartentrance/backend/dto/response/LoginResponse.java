@@ -1,4 +1,4 @@
-package com.smartentrance.backend.dto;
+package com.smartentrance.backend.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
