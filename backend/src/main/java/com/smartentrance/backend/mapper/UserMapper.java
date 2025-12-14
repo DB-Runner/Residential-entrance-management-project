@@ -1,7 +1,7 @@
 package com.smartentrance.backend.mapper;
 
-import com.smartentrance.backend.dto.RegisterUserRequest;
-import com.smartentrance.backend.dto.UserResponse;
+import com.smartentrance.backend.dto.request.RegisterUserRequest;
+import com.smartentrance.backend.dto.response.UserResponse;
 import com.smartentrance.backend.model.User;
 import org.springframework.stereotype.Component;
 

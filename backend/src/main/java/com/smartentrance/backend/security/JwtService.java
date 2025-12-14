@@ -4,16 +4,15 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 @Service
 public class JwtService {
@@ -22,7 +21,10 @@ public class JwtService {
     private String secretKey;
 
     @Value("${application.security.jwt.expiration}")
-    private long jwtExpiration;
+    private Long shortExpiration;
+
+    @Value("${application.security.jwt.remember-me.expiration}")
+    private Long rememberMeExpiration;
 
     @Value("${application.security.jwt.cookie-name}")
     private String cookieName;
@@ -30,12 +32,23 @@ public class JwtService {
     @Value("${application.security.jwt.secure-cookie}")
     private boolean secureCookie;
 
-    public ResponseCookie generateCookie(String token) {
+    private SecretKey cachedKey;
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        this.cachedKey = Keys.hmacShaKeyFor(keyBytes);
+    }
+
+
+    public ResponseCookie generateCookie(String token, boolean rememberMe) {
+        long maxAge = rememberMe ? rememberMeExpiration : shortExpiration;
+
         return ResponseCookie.from(cookieName, token)
                 .httpOnly(true)
                 .secure(secureCookie)
                 .path("/")
-                .maxAge(jwtExpiration / 1000)
+                .maxAge(maxAge / 1000)
                 .sameSite("Lax")
                 .build();
     }
@@ -49,51 +62,28 @@ public class JwtService {
                 .build();
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+    public String generateToken(UserPrincipal userPrincipal, boolean rememberMe) {
+        Map<String, Object> claims = new HashMap<>();
+
+        claims.put("role", userPrincipal.user().getRole().name());
+        claims.put("id", userPrincipal.user().getId());
+
+        long expirationTime = rememberMe ? rememberMeExpiration : shortExpiration;
+
+        return buildToken(claims, userPrincipal.getUsername(), expirationTime);
     }
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, jwtExpiration);
-    }
-
-    public String generateToken(UserDetails userDetails, long expiration) {
-        return buildToken(new HashMap<>(), userDetails, expiration);
-    }
-
-    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
+    private String buildToken(Map<String, Object> extraClaims, String subject, Long expiration) {
         return Jwts.builder()
                 .claims(extraClaims)
-                .subject(userDetails.getUsername())
+                .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
-    }
-
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private Claims extractAllClaims(String token) {
+    public Claims validateAndGetClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getSignInKey())
                 .build()
@@ -101,8 +91,23 @@ public class JwtService {
                 .getPayload();
     }
 
+    public String getUsername(Claims claims) {
+        return claims.getSubject();
+    }
+
+    public String getRole(Claims claims) {
+        return claims.get("role", String.class);
+    }
+
+    public Integer getUserId(Claims claims) {
+        return claims.get("id", Integer.class);
+    }
+
+    public Date getIssuedAt(Claims claims) {
+        return claims.getIssuedAt();
+    }
+
     private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return cachedKey;
     }
 }

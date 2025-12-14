@@ -1,31 +1,50 @@
 package com.smartentrance.backend.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
-import org.springframework.http.ResponseEntity;
+import com.smartentrance.backend.security.JwtService;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BaseException.class)
-    public ResponseEntity<ProblemDetail> handleBaseException(BaseException ex) {
-        return ResponseEntity.status(ex.getStatusCode()).body(ex.getBody());
+    private final JwtService jwtService;
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ProblemDetail> handleAuthErrors(AuthenticationException ex, HttpServletResponse response) {
+        clearCookie(response);
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Authentication failed");
+    }
+
+    @ExceptionHandler({EntityNotFoundException.class, NoSuchElementException.class})
+    public ResponseEntity<ProblemDetail> handleNotFound(Exception ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(EntityExistsException.class)
+    public ResponseEntity<ProblemDetail> handleConflict(EntityExistsException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ProblemDetail> handleValidationErrors(MethodArgumentNotValidException ex) {
-        ProblemDetail body = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation Failed");
-        body.setTitle("Bad Request");
+    public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex) {
+        ProblemDetail body = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
 
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
@@ -40,37 +59,34 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ProblemDetail> handleJsonErrors(HttpMessageNotReadableException ex) {
-        ProblemDetail body = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                "Invalid JSON format or invalid Enum value"
-        );
-        body.setTitle("Bad Request");
-        return ResponseEntity.badRequest().body(body);
+    public ResponseEntity<ProblemDetail> handleJsonError(HttpMessageNotReadableException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid JSON format or invalid Enum value");
     }
 
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ProblemDetail> handleAuthError(AuthenticationException ex) {
-        ProblemDetail body = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid email or password");
-        body.setTitle("Authentication Failed");
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
-    }
-
-    @ExceptionHandler({AccessDeniedException.class, PermissionDeniedException.class})
+    @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
     public ResponseEntity<ProblemDetail> handleAccessDenied(Exception ex) {
-        ProblemDetail body = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
-        body.setTitle("Access Denied");
+        return buildResponse(HttpStatus.FORBIDDEN, "Access Denied");
+    }
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ProblemDetail> handleStaticResourceNotFound(NoResourceFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, "Resource not found");
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ProblemDetail> handleGeneralError(Exception ex) {
-        ProblemDetail body = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
-        body.setTitle("Internal Server Error");
+    public ResponseEntity<ProblemDetail> handleGeneric(Exception ex) {
+        ex.printStackTrace();
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred");
+    }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    private void clearCookie(HttpServletResponse response) {
+        ResponseCookie cookie = jwtService.getCleanCookie();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private ResponseEntity<ProblemDetail> buildResponse(HttpStatus status, String detail) {
+        ProblemDetail body = ProblemDetail.forStatusAndDetail(status, detail);
+        body.setTitle(status.getReasonPhrase());
+        return ResponseEntity.status(status).body(body);
     }
 }
