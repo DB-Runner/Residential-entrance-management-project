@@ -1,19 +1,20 @@
 package com.smartentrance.backend.controller;
 
-import com.smartentrance.backend.dto.LoginRequest;
-import com.smartentrance.backend.dto.LoginResponse;
-import com.smartentrance.backend.dto.RegisterUserRequest;
-import com.smartentrance.backend.dto.UserResponse;
+import com.smartentrance.backend.dto.request.LoginRequest;
+import com.smartentrance.backend.dto.response.LoginResponse;
+import com.smartentrance.backend.dto.request.RegisterUserRequest;
+import com.smartentrance.backend.dto.response.UserResponse;
 import com.smartentrance.backend.security.JwtService;
 import com.smartentrance.backend.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,21 +25,21 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterUserRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {
         LoginResponse loginResponse = authService.register(request);
 
-        ResponseCookie cookie = jwtService.generateCookie(loginResponse.getToken());
+        ResponseCookie cookie = jwtService.generateCookie(loginResponse.getToken(), request.isRememberMe());
 
-        return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.created(URI.create("/api/auth/me"))
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .build();
+                .body(loginResponse.getUser());
     }
 
     @PostMapping("/login")
     public ResponseEntity<UserResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse loginResponse = authService.login(request);
 
-        ResponseCookie cookie = jwtService.generateCookie(loginResponse.getToken());
+        ResponseCookie cookie = jwtService.generateCookie(loginResponse.getToken(), request.isRememberMe());
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -53,8 +54,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponse> getCurrentUser() {
-        return ResponseEntity.ok(authService.getCurrentUser());
+    public ResponseEntity<UserResponse> me() {
+        return ResponseEntity.ok(authService.getAuthenticatedUser());
     }
 }

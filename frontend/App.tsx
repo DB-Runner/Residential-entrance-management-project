@@ -6,8 +6,43 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthRedirect } from './components/AuthRedirect';
+import { useEffect, useState } from 'react';
+import { authService } from './services/authService';
 
 export default function App() {
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // При зареждане на приложението проверяваме дали има активна сесия (cookie)
+    const checkAuth = async () => {
+      try {
+        // Опит да вземем текущия user от backend
+        // Ако има валиден cookie (session или remember-me), backend ще върне user данни
+        await authService.me();
+        console.log('User authenticated via cookie');
+      } catch (error) {
+        console.log('No valid session found');
+        // Няма валидна сесия - нормално
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Показваме loading screen докато проверяваме сесията
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Зареждане...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <Routes>

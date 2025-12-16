@@ -1,6 +1,5 @@
 package com.smartentrance.backend.security;
 
-import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,9 +14,7 @@ public class UserPrincipalLoader implements UserDetailsService {
     private final UserService userService;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
-        return new UserPrincipal(user);
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return new UserPrincipal(userService.getByEmail(username));
     }
 }

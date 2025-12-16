@@ -15,10 +15,6 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     isAuthenticated,
     user,
     requireAdmin,
-    localStorage: {
-      isAuthenticated: localStorage.getItem('isAuthenticated'),
-      currentUser: localStorage.getItem('currentUser'),
-    }
   });
 
   if (!isAuthenticated || !user) {

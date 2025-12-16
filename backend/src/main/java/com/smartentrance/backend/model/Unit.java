@@ -35,11 +35,6 @@ public class Unit {
     @ToString.Exclude
     private Building building;
 
-    @OneToOne(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    @ToString.Exclude
-    private UnitBalance balance;
-
     @Column(name = "unit_number", nullable = false)
     @NotNull @NotBlank
     private String unitNumber;
@@ -51,8 +46,6 @@ public class Unit {
     @Column(name = "resident_count", nullable = false)
     @NotNull @PositiveOrZero
     private Integer residents;
-
-    private Integer floor;
 
     @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

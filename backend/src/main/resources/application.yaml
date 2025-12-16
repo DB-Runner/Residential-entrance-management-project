@@ -10,19 +10,16 @@ spring:
     database: POSTGRESQL
     show-sql: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
   #profiles:
     #active: dev
-
-logging:
-  level:
-    org.springframework.cache: TRACE
-
 
 application:
   security:
     jwt:
       secret-key: ${JWT_SECRET}
-      expiration: 86400000       # 1 day (Short term)
+      expiration: 3600000       # 1 hour (Short term)
+      remember-me:
+        expiration: 604800000  # 7 days (Long term)
       cookie-name: accessToken
       secure-cookie: false       # Set to true in production with HTTPS

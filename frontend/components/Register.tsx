@@ -60,14 +60,14 @@ export function Register() {
       });
 
       console.log('Registration successful:', response);
-      console.log('isAuthenticated:', localStorage.getItem('isAuthenticated'));
-      console.log('currentUser:', localStorage.getItem('currentUser'));
+      console.log('currentUser:', sessionStorage.getItem('currentUser'));
       console.log('User role from response:', response.user.role);
 
       // Успешна регистрация - използваме ролята от backend response
       if (response.user.role === DBUserRole.BUILDING_MANAGER) {
         // За домоуправител - запази кода и пренасочи към dashboard
         if (response.buildingCode) {
+          // newBuildingCode се запазва в localStorage независимо от remember me
           localStorage.setItem('newBuildingCode', response.buildingCode);
         }
         console.log('Navigating to /admin/dashboard');
@@ -348,8 +348,12 @@ export function Register() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="24"
                       min="1"
+                      max="100"
                       required
                     />
+                    <p className="text-gray-500 text-sm mt-1">
+                      Максимум 100 апартамента
+                    </p>
                   </div>
                 </div>
               )}

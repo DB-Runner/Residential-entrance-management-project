@@ -1,4 +1,4 @@
-package com.smartentrance.backend.dto;
+package com.smartentrance.backend.dto.request;
 
 import com.smartentrance.backend.model.enums.UserRole;
 import jakarta.validation.constraints.*;
@@ -21,4 +21,6 @@ public class RegisterUserRequest {
 
     @NotNull
     private UserRole role;
+
+    private boolean rememberMe;
 }
