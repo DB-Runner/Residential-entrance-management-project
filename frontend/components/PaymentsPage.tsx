@@ -1,10 +1,12 @@
 import { Receipt, CheckCircle, AlertCircle, Clock, TrendingUp, DollarSign } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { paymentService } from '../services/paymentService';
 import type { UnitFeeWithDetails } from '../types/database';
 import { FundType } from '../types/database';
 
 export function PaymentsPage() {
+  const navigate = useNavigate();
   const [fees, setFees] = useState<UnitFeeWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
@@ -34,6 +36,10 @@ export function PaymentsPage() {
 
   const getFundName = (fundType: FundType) => {
     return fundType === FundType.MAINTENANCE ? 'Фонд Поддръжка' : 'Фонд Ремонти';
+  };
+
+  const handlePayClick = (fee: UnitFeeWithDetails) => {
+    navigate('/payment/checkout', { state: { fee } });
   };
 
   const filteredFees = fees.filter(fee => {
@@ -240,7 +246,10 @@ export function PaymentsPage() {
                         {fee.amount.toFixed(2)} лв
                       </div>
                       {status !== 'paid' && (
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <button
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          onClick={() => handlePayClick(fee)}
+                        >
                           Плати
                         </button>
                       )}

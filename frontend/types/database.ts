@@ -21,6 +21,10 @@ export interface User {
   fullName: string;
   email: string;
   role: UserRole;
+  unitNumber?: string;
+  buildingCode?: string;
+  buildingName?: string;
+  buildingAddress?: string;
   createdAt?: string;
   updatedAt?: string;
 }

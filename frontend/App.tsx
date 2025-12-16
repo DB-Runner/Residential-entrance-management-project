@@ -4,6 +4,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { PaymentCheckoutPage } from './pages/PaymentCheckoutPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthRedirect } from './components/AuthRedirect';
 import { useEffect, useState } from 'react';
@@ -97,6 +98,16 @@ export default function App() {
           element={
             <ProtectedRoute requireAdmin={true}>
               <AdminDashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Защитени страници - Плащане */}
+        <Route 
+          path="/payment/checkout" 
+          element={
+            <ProtectedRoute>
+              <PaymentCheckoutPage />
             </ProtectedRoute>
           } 
         />

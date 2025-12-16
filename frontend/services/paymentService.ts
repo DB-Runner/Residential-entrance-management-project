@@ -10,6 +10,22 @@ export interface PaymentSummary {
   pendingCount: number;
 }
 
+export interface ProcessPaymentRequest {
+  unitFeeId: number;
+  amount: number;
+  cardNumber: string; // Ще се изпращат само последни 4 цифри
+  cardHolder: string;
+  expiryDate: string;
+  cvv: string;
+}
+
+export interface ProcessPaymentResponse {
+  success: boolean;
+  message: string;
+  payment?: Payment;
+  receiptId?: number;
+}
+
 // Mock данни за демонстрация (използва се когато backend не е наличен)
 const MOCK_FEES: UnitFeeWithDetails[] = [
   {
@@ -114,6 +130,28 @@ export const paymentService = {
       return await api.post<Payment>(`/payments/fees/${feeId}/pay`, { bankReference });
     } catch (error) {
       throw new Error('Плащането не може да бъде обработено в момента');
+    }
+  },
+
+  // Обработи плащане с карта
+  processPayment: async (request: ProcessPaymentRequest): Promise<ProcessPaymentResponse> => {
+    try {
+      // Изпращаме само последните 4 цифри на картата (за сигурност)
+      const cardLast4 = request.cardNumber.replace(/\s/g, '').slice(-4);
+      
+      const response = await api.post<ProcessPaymentResponse>('/payments/process', {
+        unitFeeId: request.unitFeeId,
+        amount: request.amount,
+        cardLast4,
+        cardHolder: request.cardHolder,
+        expiryDate: request.expiryDate,
+        // CVV НЕ се изпраща към backend (за реална интеграция)
+        // Backend използва payment gateway API за обработка
+      });
+      
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Плащането не може да бъде обработено');
     }
   },
 };

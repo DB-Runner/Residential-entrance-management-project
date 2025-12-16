@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { PaymentsPanel } from './PaymentsPanel';
 import { PaymentsPage } from './PaymentsPage';
 import { EventsPanel } from './EventsPanel';
+import { ProfilePage } from './ProfilePage';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { DashboardView, dashboardViews } from '../types/views';
@@ -55,14 +56,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
             </div>
           )}
           
-          {currentView === 'profile' && (
-            <div>
-              <h1 className="text-gray-900 mb-6">Моят профил</h1>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600">Настройки на профила</p>
-              </div>
-            </div>
-          )}
+          {currentView === 'profile' && <ProfilePage />}
         </main>
       </div>
     </div>

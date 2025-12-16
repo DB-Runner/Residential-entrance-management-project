@@ -77,8 +77,6 @@ export const authService = {
     } finally {
       // Изчистваме само UI state
       sessionStorage.removeItem('currentUser');
-      localStorage.removeItem('newBuildingCode');
-      localStorage.removeItem('buildingCode');
       // НЕ изчистваме rememberedEmail и rememberMe - те остават за следващ вход
       // Ако потребителят иска да изчисти запомнения имейл, може да махне checkbox-а при следващ login
     }
@@ -127,4 +125,6 @@ export const authService = {
     const user = authService.getCurrentUser();
     return user?.role || null;
   },
+
+  
 };

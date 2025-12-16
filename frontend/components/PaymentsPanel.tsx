@@ -1,5 +1,6 @@
 import { Receipt, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { paymentService } from '../services/paymentService';
 import type { UnitFeeWithDetails } from '../types/database';
 import { FundType } from '../types/database';
@@ -9,6 +10,7 @@ interface PaymentsPanelProps {
 }
 
 export function PaymentsPanel({ expanded = false }: PaymentsPanelProps) {
+  const navigate = useNavigate();
   const [fees, setFees] = useState<UnitFeeWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,6 +46,10 @@ export function PaymentsPanel({ expanded = false }: PaymentsPanelProps) {
 
   const getFundName = (fundType: FundType) => {
     return fundType === FundType.MAINTENANCE ? 'Фонд Поддръжка' : 'Фонд Ремонти';
+  };
+
+  const handlePayClick = (fee: UnitFeeWithDetails) => {
+    navigate('/payment/checkout', { state: { fee } });
   };
 
   if (loading) {
@@ -139,7 +145,7 @@ export function PaymentsPanel({ expanded = false }: PaymentsPanelProps) {
                       {fee.amount.toFixed(2)} лв
                     </div>
                     {status !== 'paid' && (
-                      <button className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
+                      <button className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors" onClick={() => handlePayClick(fee)}>
                         Плати
                       </button>
                     )}

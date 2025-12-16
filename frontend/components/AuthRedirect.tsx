@@ -12,7 +12,7 @@ export function AuthRedirect({ children }: AuthRedirectProps) {
   const user = authService.getCurrentUser();
 
   if (isAuthenticated && user) {
-    if (user.role === DBUserRole.ADMIN) {
+    if (user.role === DBUserRole.BUILDING_MANAGER) {
       return <Navigate to="/admin/dashboard" replace />;
     }
     return <Navigate to="/dashboard" replace />;
