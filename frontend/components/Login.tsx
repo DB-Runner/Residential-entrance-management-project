@@ -30,7 +30,6 @@ export function Login() {
 
     try {
       const response = await authService.login({ email, password, rememberMe });
-      
       // Ако rememberMe е true, запазваме имейла в localStorage
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', email);

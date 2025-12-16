@@ -4,7 +4,6 @@ import { AdminOverview } from './AdminOverview';
 import { ApartmentsManagement } from './ApartmentsManagement';
 import { PaymentsManagement } from './PaymentsManagement';
 import { EventsManagement } from './EventsManagement';
-import { AnnouncementsManagement } from './AnnouncementsManagement';
 import { BuildingRegistrationModal } from './BuildingRegistrationModal';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -23,7 +22,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [checkingBuilding, setCheckingBuilding] = useState(true);
   const [newBuildingCode, setNewBuildingCode] = useState<string | null>(null);
 
-    useEffect(() => {
+  // Validate view parameter
+  useEffect(() => {
     if (view && !adminViews.includes(view as AdminView)) {
       navigate('/admin/dashboard/overview', { replace: true });
     }
@@ -71,6 +71,9 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     localStorage.setItem('buildingCode', code);
     setShowBuildingModal(false);
     setNewBuildingCode(null);
+    
+    // Изпрати custom event за да се актуализира ApartmentsManagement компонента
+    window.dispatchEvent(new CustomEvent('buildingCodeUpdated', { detail: { code } }));
   };
 
   if (checkingBuilding) {
@@ -83,8 +86,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-        <DashboardHeader onLogout={onLogout} isAdmin />
-
+      <DashboardHeader onLogout={onLogout} isAdmin />
+      
       <div className="flex">
         <AdminSidebar currentView={currentView} onViewChange={handleViewChange} />
         
@@ -93,7 +96,6 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           {currentView === 'apartments' && <ApartmentsManagement />}
           {currentView === 'payments' && <PaymentsManagement />}
           {currentView === 'events' && <EventsManagement />}
-          {currentView === 'announcements' && <AnnouncementsManagement />}
           {currentView === 'reports' && (
             <div>
               <h1 className="text-gray-900 mb-6">Отчети</h1>

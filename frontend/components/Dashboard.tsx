@@ -3,8 +3,6 @@ import { Sidebar } from './Sidebar';
 import { PaymentsPanel } from './PaymentsPanel';
 import { PaymentsPage } from './PaymentsPage';
 import { EventsPanel } from './EventsPanel';
-import { MessagesPanel } from './MessagesPanel';
-import { AnnouncementsPanel } from './AnnouncementsPanel';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { DashboardView, dashboardViews } from '../types/views';
@@ -28,13 +26,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const handleViewChange = (newView: DashboardView) => {
     navigate(`/dashboard/${newView}`);
   };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader onLogout={onLogout} />
       
       <div className="flex">
-          <Sidebar currentView={currentView} onViewChange={handleViewChange} />
-
+        <Sidebar currentView={currentView} onViewChange={handleViewChange} />
+        
         <main className="flex-1 p-6 ml-64">
           {currentView === 'overview' && (
             <div className="space-y-6">
@@ -42,12 +41,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <PaymentsPanel />
-                <AnnouncementsPanel />
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <EventsPanel />
-                <MessagesPanel />
               </div>
             </div>
           )}
@@ -60,13 +54,6 @@ export function Dashboard({ onLogout }: DashboardProps) {
               <EventsPanel expanded />
             </div>
           )}
-          
-          {/*currentView === 'messages' && (
-            <div>
-              <h1 className="text-gray-900 mb-6">Съобщения</h1>
-              <MessagesPanel expanded />
-            </div>
-          )*/}
           
           {currentView === 'profile' && (
             <div>
