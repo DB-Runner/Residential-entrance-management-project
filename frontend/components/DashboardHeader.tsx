@@ -33,6 +33,24 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
     loadUser();
   }, []);
 
+  // Затваряне на профилното меню при клик извън него
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.profile-menu')) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileMenu]);
+
   // Определи ролята на потребителя
   const userRoleLabel = currentUser?.role === UserRole.BUILDING_MANAGER ? 'Домоуправител' : 'Жител';
   const isBuildingManager = currentUser?.role === UserRole.BUILDING_MANAGER;
@@ -44,7 +62,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
         <div className="flex items-center gap-2">
           <Building2 className="w-8 h-8 text-blue-600" />
           <div>
-            <span className="text-blue-600 block"><b>SmartEntrance</b></span>
+            <span className="text-blue-600 block">Жилищни Входове</span>
             <span className="text-gray-500 text-sm">
               {isBuildingManager ? 'Панел за управление' : 'бул. Витоша 10, вх. А'}
             </span>
@@ -60,7 +78,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
           </button>
           
           {/* Профилно меню */}
-          <div className="relative">
+          <div className="relative profile-menu">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg transition-colors"

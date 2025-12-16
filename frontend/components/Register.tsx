@@ -348,8 +348,12 @@ export function Register() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="24"
                       min="1"
+                      max="100"
                       required
                     />
+                    <p className="text-gray-500 text-sm mt-1">
+                      Максимум 100 апартамента
+                    </p>
                   </div>
                 </div>
               )}

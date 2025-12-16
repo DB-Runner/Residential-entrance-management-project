@@ -8,6 +8,7 @@ export function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +18,7 @@ export function Login() {
     setLoading(true);
 
     try {
-      const response = await authService.login({ email, password });
+      const response = await authService.login({ email, password, rememberMe });
       
       // Пренасочваме към съответния dashboard според ролята
       if (response.user.role === DBUserRole.BUILDING_MANAGER) {
@@ -25,9 +26,15 @@ export function Login() {
       } else {
         navigate('/dashboard');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('Грешен имейл или парола. Моля опитайте отново.');
+      
+      // Обработка на различни типове грешки
+      if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Грешен имейл или парола. Моля опитайте отново.');
+      }
     } finally {
       setLoading(false);
     }
@@ -44,7 +51,7 @@ export function Login() {
                 <Building2 className="w-8 h-8 text-blue-600" />
               </div>
             </div>
-            <h2 className="mb-2 text-gray-900">Добре дошли</h2>
+            <h2 className="mb-2 text-gray-900">Добре дошли обратно</h2>
             <p className="text-gray-600">Влезте във вашия акаунт</p>
           </div>
 
@@ -98,17 +105,17 @@ export function Login() {
                 <input
                   type="checkbox"
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                 />
                 <span className="text-gray-700">Запомни ме</span>
               </label>
-              {/*}
               <button
                 type="button"
                 className="text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Забравена парола?
               </button>
-              */}
             </div>
 
             <button
