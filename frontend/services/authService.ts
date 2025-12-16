@@ -32,9 +32,13 @@ export interface AuthResponse {
 export const authService = {
   // Вход
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+<<<<<<< Updated upstream
     // Backend приема rememberMe и генерира съответния cookie (session или persistent)
     // Ако rememberMe=true, backend генерира persistent cookie който остава на диска
     // Ако rememberMe=false, backend генерира session cookie който се изтрива при затваряне
+=======
+    // Backend връща user данни и JWT токен в HTTP-only cookie
+>>>>>>> Stashed changes
     const user = await api.post<User>('/auth/login', credentials);
     
     // Запазваме потребителя САМО в sessionStorage за UI целите
@@ -120,6 +124,12 @@ export const authService = {
   // Обнови текущия потребител в sessionStorage
   updateCurrentUser: (user: User) => {
     sessionStorage.setItem('currentUser', JSON.stringify(user));
+  },
+
+  // Вземи ролята на текущия потребител
+  getUserRole: (): UserRole | null => {
+    const user = authService.getCurrentUser();
+    return user?.role || null;
   },
 
   // Вземи ролята на текущия потребител
