@@ -40,6 +40,16 @@ export function Login() {
         localStorage.removeItem('rememberMe');
       }
       
+      // Ако rememberMe е true, запазваме имейла в localStorage
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        // Ако rememberMe е false, изтриваме запазения имейл
+        localStorage.removeItem('rememberedEmail');
+        localStorage.removeItem('rememberMe');
+      }
+      
       // Пренасочваме към съответния dashboard според ролята
       if (response.user.role === DBUserRole.BUILDING_MANAGER) {
         navigate('/admin/dashboard');
