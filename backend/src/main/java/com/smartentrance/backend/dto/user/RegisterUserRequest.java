@@ -1,13 +1,14 @@
-package com.smartentrance.backend.dto.request;
+package com.smartentrance.backend.dto.user;
 
-import com.smartentrance.backend.model.enums.UserRole;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
 public class RegisterUserRequest {
     @NotBlank
-    private String fullName;
+    private String firstName;
+
+    private String lastName;
 
     @NotBlank
     @Email
@@ -18,9 +19,6 @@ public class RegisterUserRequest {
     // @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$", message = "Password must contain uppercase, lowercase and number")
     // Uncomment the above annotations to enforce password complexity rules
     private String password;
-
-    @NotNull
-    private UserRole role;
 
     private boolean rememberMe;
 }
