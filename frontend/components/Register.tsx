@@ -1,5 +1,6 @@
 import { Building2, Mail, Lock, User, Home, Shield, UserCircle, MapPin } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { Autocomplete } from '@react-google-maps/api';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { UserRole as DBUserRole } from '../types/database';
@@ -23,12 +24,41 @@ export function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [isAddressSelectedFromGoogle, setIsAddressSelectedFromGoogle] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
+
+  const onAutocompleteLoad = (
+  autocomplete: google.maps.places.Autocomplete
+) => {
+  autocompleteRef.current = autocomplete;
+};
+
+const onPlaceChanged = () => {
+  if (!autocompleteRef.current) return;
+
+  const place = autocompleteRef.current.getPlace();
+
+  if (!place || !place.formatted_address) {
+    setIsAddressSelectedFromGoogle(false);
+    return;
+  }
+
+  setFormData(prev => ({
+    ...prev,
+    buildingAddress: place.formatted_address || ''
+  }));
+
+  // ✅ адресът е валиден, защото е избран от Google
+  setIsAddressSelectedFromGoogle(true);
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +67,11 @@ export function Register() {
     // Валидация на паролите
     if (formData.password !== formData.confirmPassword) {
       setError('Паролите не съвпадат');
+      return;
+    }
+
+    if (role === 'admin' && !isAddressSelectedFromGoogle) {
+      setError('Моля, изберете валиден адрес от падащия списък.');
       return;
     }
 
@@ -324,16 +359,24 @@ export function Register() {
                     </label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
-                        id="buildingAddress"
-                        name="buildingAddress"
-                        value={formData.buildingAddress}
-                        onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="бул. Витоша 10"
-                        required
-                      />
+                      <Autocomplete
+                        onLoad={onAutocompleteLoad}
+                        onPlaceChanged={onPlaceChanged}
+                      >
+                        <input
+                          type="text"
+                          id="buildingAddress"
+                          name="buildingAddress"
+                          value={formData.buildingAddress}
+                          onChange={(e) => {
+                            handleChange(e);
+                            setIsAddressSelectedFromGoogle(false);
+                          }}
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="бул. Витоша 10"
+                          required
+                        />
+                      </Autocomplete>
                     </div>
                   </div>
 
@@ -377,7 +420,7 @@ export function Register() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (role == 'admin' && !isAddressSelectedFromGoogle)}
               className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Регистриране...' : 'Регистрация'}
