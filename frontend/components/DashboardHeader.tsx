@@ -1,5 +1,6 @@
-import { Building2, Bell, User, LogOut, ChevronDown } from 'lucide-react';
+import { Building2, User, LogOut, ChevronDown } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { UserRole } from '../types/database';
 import type { User as UserType } from '../types/database';
@@ -10,6 +11,7 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderProps) {
+  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +57,12 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
   const userRoleLabel = currentUser?.role === UserRole.BUILDING_MANAGER ? 'Домоуправител' : 'Жител';
   const isBuildingManager = currentUser?.role === UserRole.BUILDING_MANAGER;
 
+  const handleProfileClick = () => {
+    setShowProfileMenu(false);
+    // Винаги пренасочваме към жителския профил
+    navigate('/dashboard/profile');
+  };
+
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="px-6 py-4 flex items-center justify-between">
@@ -62,7 +70,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
         <div className="flex items-center gap-2">
           <Building2 className="w-8 h-8 text-blue-600" />
           <div>
-            <span className="text-blue-600 block"><b>SmartEntrance</b></span>
+            <span className="text-blue-600 block">Жилищни Входове</span>
             <span className="text-gray-500 text-sm">
               {isBuildingManager ? 'Панел за управление' : 'бул. Витоша 10, вх. А'}
             </span>
@@ -71,12 +79,6 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
         
         {/* Профил отдясно */}
         <div className="flex items-center gap-4">
-          {/* Известия */}
-          <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <Bell className="w-6 h-6 text-gray-600" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-          
           {/* Профилно меню */}
           <div className="relative profile-menu">
             <button
@@ -100,10 +102,15 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
             {/* Dropdown меню */}
             {showProfileMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2">
-                <button className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700">
+                <button 
+                  onClick={handleProfileClick}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                >
                   <User className="w-4 h-4" />
                   Моят профил
                 </button>
+                
+                <div className="border-t my-1"></div>
                 <button
                   onClick={onLogout}
                   className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-red-600"

@@ -1,87 +1,67 @@
 import { api } from '../config/api';
-import type { Unit, UnitFee, UnitFeeWithDetails, UnitBalance } from '../types/database';
+import type { Unit } from '../types/database';
 
-export interface CreateUnitRequest {
-  buildingId: number;
-  unitNumber: string;
-  area: number;
-  residents: number;
-  floor?: number;
-}
-
-export interface UpdateUnitRequest {
-  unitNumber?: string;
-  area?: number;
-  residents?: number;
-  floor?: number;
-}
-
-export interface CreateUnitFeeRequest {
-  unitId: number;
-  month: string; // ISO date string (YYYY-MM-DD)
-  amount: number;
-  dueFrom: string; // ISO date string
-  dueTo: string; // ISO date string
-}
-
-export interface CreateBulkFeesRequest {
-  month: string; // ISO date string (YYYY-MM-DD)
-  amount: number;
-  dueFrom: string;
-  dueTo: string;
-}
-
-export const unitService = {
-  // Вземи всички апартаменти
-  getAllUnits: () => api.get<Unit[]>('/units'),
-
-  // Вземи апартамент по ID
-  getUnitById: (id: number) => api.get<Unit>(`/units/${id}`),
-
-  // Вземи апартамента на текущия потребител
-  getMyUnit: () => api.get<Unit>('/units/my'),
-
-  // Създай нов апартамент (само admin)
-  createUnit: (data: CreateUnitRequest) =>
-    api.post<Unit>('/units', data),
-
-  // Обнови апартамент (само admin)
-  updateUnit: (id: number, data: UpdateUnitRequest) =>
-    api.put<Unit>(`/units/${id}`, data),
-
-  // Изтрий апартамент (само admin)
-  deleteUnit: (id: number) => api.delete<void>(`/units/${id}`),
-
-  // Вземи баланса на апартамент
-  getUnitBalance: (unitId: number) => api.get<UnitBalance>(`/units/${unitId}/balance`),
+// Mock данни за демонстрация - генерирани кодове за всеки апартамент
+const generateMockUnits = (totalUnits: number): Unit[] => {
+  const units: Unit[] = [];
+  for (let i = 1; i <= totalUnits; i++) {
+    // Генерираме 8-цифрен код за всеки апартамент
+    const accessCode = Math.floor(10000000 + Math.random() * 90000000).toString();
+    units.push({
+      id: i,
+      buildingId: 1,
+      unitNumber: i.toString(),
+      area: 50 + Math.floor(Math.random() * 50), // 50-100 кв.м
+      residents: 0,
+      floor: Math.floor((i - 1) / 4) + 1, // 4 апартамента на етаж
+      accessCode: accessCode,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+  return units;
 };
 
-export const unitFeeService = {
-  // Вземи всички такси (admin)
-  getAllFees: () => api.get<UnitFeeWithDetails[]>('/unit-fees'),
+const MOCK_UNITS = generateMockUnits(24);
 
-  // Вземи таксите на един апартамент
-  getUnitFees: (unitId: number) =>
-    api.get<UnitFeeWithDetails[]>(`/units/${unitId}/fees`),
+export const unitService = {
+  // Получи всички апартаменти за текущата сграда
+  getAll: async (): Promise<Unit[]> => {
+    try {
+      // Backend endpoint би трябвало да върне всички units за сградата на текущия manager
+      return await api.get<Unit[]>('/units');
+    } catch (error) {
+      console.log('Using mock units data');
+      return MOCK_UNITS;
+    }
+  },
 
-  // Вземи моите такси
-  getMyFees: () => api.get<UnitFeeWithDetails[]>('/unit-fees/my'),
+  // Получи информация за конкретен апартамент
+  getById: async (id: number): Promise<Unit> => {
+    try {
+      return await api.get<Unit>(`/units/${id}`);
+    } catch (error) {
+      const unit = MOCK_UNITS.find(u => u.id === id);
+      if (!unit) throw new Error('Апартаментът не е намерен');
+      return unit;
+    }
+  },
 
-  // Вземи непла��ени такси (admin)
-  getUnpaidFees: () => api.get<UnitFeeWithDetails[]>('/unit-fees/unpaid'),
+  // Редактирай апартамент
+  update: async (id: number, data: Partial<Unit>): Promise<Unit> => {
+    try {
+      return await api.put<Unit>(`/units/${id}`, data);
+    } catch (error) {
+      throw new Error('Апартаментът не може да бъде редактиран в момента');
+    }
+  },
 
-  // Създай нова такса (само admin)
-  createFee: (data: CreateUnitFeeRequest) =>
-    api.post<UnitFee>('/unit-fees', data),
-
-  // Създай такси за всички апартаменти (само admin)
-  createFeesForAll: (data: CreateBulkFeesRequest) =>
-    api.post<UnitFee[]>('/unit-fees/bulk', data),
-
-  // Маркирай такса като платена (admin)
-  markAsPaid: (feeId: number) =>
-    api.patch<UnitFee>(`/unit-fees/${feeId}/mark-paid`, {}),
-
-  // Изтрий такса (admin)
-  deleteFee: (feeId: number) => api.delete<void>(`/unit-fees/${feeId}`),
+  // Изтрий апартамент
+  delete: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/units/${id}`);
+    } catch (error) {
+      throw new Error('Апартаментът не може да бъде изтрит в момента');
+    }
+  },
 };

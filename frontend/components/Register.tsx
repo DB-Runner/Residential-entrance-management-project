@@ -65,11 +65,14 @@ export function Register() {
 
       // Успешна регистрация - използваме ролята от backend response
       if (response.user.role === DBUserRole.BUILDING_MANAGER) {
-        // За домоуправител - запази кода и пренасочи към dashboard
-        if (response.buildingCode) {
-          // newBuildingCode се запазва в localStorage независимо от remember me
-          localStorage.setItem('newBuildingCode', response.buildingCode);
+        // За домоуправител - запази броя апартаменти и пренасочи към dashboard
+        
+        // Запази броя на апартаментите за генериране на mock units
+        if (formData.totalUnits) {
+          console.log('Saving buildingTotalUnits to localStorage:', formData.totalUnits);
+          localStorage.setItem('buildingTotalUnits', formData.totalUnits);
         }
+        
         console.log('Navigating to /admin/dashboard');
         navigate('/admin/dashboard');
       } else {

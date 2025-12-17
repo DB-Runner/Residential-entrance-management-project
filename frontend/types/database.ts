@@ -53,11 +53,13 @@ export interface Unit {
   area: number;
   residents: number;
   floor: number | null;
+  accessCode?: string; // 8-цифрен код за регистрация на жители
   createdAt: string;
   updatedAt: string;
   building?: Building;
   balance?: UnitBalance;
   fees?: UnitFee[];
+  resident?: User; // Жителят регистриран с този код (ако има такъв)
 }
 
 export interface UnitFee {

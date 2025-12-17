@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { User, Mail, Shield, Calendar, Edit2, Save, X, MapPin, Building2, Home } from 'lucide-react';
+import { User, Mail, Shield, Calendar, Edit2, Save, X, MapPin, Building2, Home, LogOut } from 'lucide-react';
 import { authService } from '../services/authService';
 import { UserRole } from '../types/database';
 import type { User as UserType } from '../types/database';
+import { useNavigate } from 'react-router-dom';
 
 export function ProfilePage() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -20,11 +22,6 @@ export function ProfilePage() {
       setLoading(true);
       setError('');
       const userData = await authService.me();
-      console.log('User data from backend:', userData);
-      console.log('unitNumber:', userData.unitNumber);
-      console.log('buildingCode:', userData.buildingCode);
-      console.log('buildingAddress:', userData.buildingAddress);
-      console.log('buildingName:', userData.buildingName);
       setUser(userData);
       setEditedName(userData.fullName);
     } catch (err) {
@@ -43,6 +40,32 @@ export function ProfilePage() {
     setIsEditing(!isEditing);
   };
 
+  {/*const handleSave = async () => {
+    try {
+      setError('');
+      // Актуализираме профила чрез backend API
+      const updatedUser = await authService.updateProfile({ fullName: editedName });
+      setUser(updatedUser);
+      setIsEditing(false);
+      alert('Профилът беше актуализиран успешно!');
+    } catch (err: any) {
+      console.error('Error updating profile:', err);
+      setError(err.message || 'Грешка при актуализиране на профила');
+      // Връщаме старото име при грешка
+      setEditedName(user?.fullName || '');
+    }
+  };*/}
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Дори при грешка, пренасочваме към началната страница
+      navigate('/');
+    }
+  };
 
   const getRoleName = (role: UserRole) => {
     return role === UserRole.BUILDING_MANAGER ? 'Домоуправител' : 'Жител';
@@ -151,9 +174,6 @@ export function ProfilePage() {
             <div className="flex-1">
               <label className="block text-sm text-gray-600 mb-1">Имейл адрес</label>
               <p className="text-gray-900">{user.email}</p>
-              <p className="text-gray-500 text-sm mt-1">
-                Имейлът не може да се променя
-              </p>
             </div>
           </div>
 
@@ -209,19 +229,6 @@ export function ProfilePage() {
             </div>
           )}
 
-          {/* Код на сграда (за жители) */}
-          {user.role === UserRole.RESIDENT && user.buildingCode && (
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <Building2 className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm text-gray-600 mb-1">Код на сграда</label>
-                <p className="text-gray-900">{user.buildingCode}</p>
-              </div>
-            </div>
-          )}
-
           {/* Име на сграда (за домоуправители) */}
           {user.role === UserRole.BUILDING_MANAGER && user.buildingName && (
             <div className="flex items-start gap-4">
@@ -256,13 +263,10 @@ export function ProfilePage() {
           <h2 className="text-gray-900">Сигурност</h2>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 space-y-4">
           <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
             <div>
               <p className="text-gray-900 mb-1">Смяна на парола</p>
-              <p className="text-gray-600 text-sm">
-                Актуализирайте паролата си за по-добра сигурност
-              </p>
             </div>
             <button
               onClick={() => alert('Функционалността за смяна на парола ще бъде добавена скоро')}
@@ -271,38 +275,21 @@ export function ProfilePage() {
               Промени парола
             </button>
           </div>
+
+          <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+            <div>
+              <p className="text-gray-900 mb-1">Излизане от профила</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Изход
+            </button>
+          </div>
         </div>
       </div>
-
-      {/* Допълнителна информация за домоуправители */}
-      {/*{user.role === UserRole.BUILDING_MANAGER && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 bg-purple-50 border-b">
-            <h2 className="text-gray-900">Административна информация</h2>
-          </div>
-
-          <div className="p-6">
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-purple-900 mb-1">Статус: Домоуправител</p>
-              <p className="text-purple-700 text-sm">
-                Имате пълен достъп до административния панел за управление на сградата
-              </p>
-            </div>
-          </div>
-        </div>
-      )}*/}
-
-      {/* DEBUG: Показване на всички данни от backend */}
-      {/*<div className="bg-yellow-50 border border-yellow-200 rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 bg-yellow-100 border-b">
-          <h2 className="text-gray-900">🐛 DEBUG: Данни от backend</h2>
-        </div>
-        <div className="p-6">
-          <pre className="text-xs bg-white p-4 rounded border overflow-auto">
-            {JSON.stringify(user, null, 2)}
-          </pre>
-        </div>
-      </div>*/}
     </div>
   );
 }
