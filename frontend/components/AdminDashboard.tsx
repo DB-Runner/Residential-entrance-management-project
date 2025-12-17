@@ -4,6 +4,7 @@ import { AdminOverview } from './AdminOverview';
 import { ApartmentsManagement } from './ApartmentsManagement';
 import { PaymentsManagement } from './PaymentsManagement';
 import { EventsManagement } from './EventsManagement';
+import { VotingManagement } from './VotingManagement';
 import { BuildingRegistrationModal } from './BuildingRegistrationModal';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -96,6 +97,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           {currentView === 'apartments' && <ApartmentsManagement />}
           {currentView === 'payments' && <PaymentsManagement />}
           {currentView === 'events' && <EventsManagement />}
+          {currentView === 'voting' && <VotingManagement />}
           {currentView === 'reports' && (
             <div>
               <h1 className="text-gray-900 mb-6">Отчети</h1>

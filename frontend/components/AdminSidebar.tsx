@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Receipt, Calendar, Megaphone, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, Calendar, Vote, FileText } from 'lucide-react';
 import { AdminView } from '../types/views';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -15,6 +15,7 @@ const menuItems = [
   { id: 'apartments' as AdminView, label: 'Апартаменти', icon: Users },
   { id: 'payments' as AdminView, label: 'Плащания', icon: Receipt },
   { id: 'events' as AdminView, label: 'Събития', icon: Calendar },
+  { id: 'voting' as AdminView, label: 'Гласувания', icon: Vote},
   { id: 'reports' as AdminView, label: 'Отчети', icon: FileText },
 ];
 

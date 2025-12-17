@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, Calendar, User } from 'lucide-react';
+import { LayoutDashboard, Receipt, Vote, Calendar, User } from 'lucide-react';
 import { DashboardView } from '../types/views';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -14,6 +14,7 @@ const menuItems = [
   { id: 'overview' as DashboardView, label: 'Преглед', icon: LayoutDashboard },
   { id: 'payments' as DashboardView, label: 'Плащания', icon: Receipt },
   { id: 'events' as DashboardView, label: 'Събития', icon: Calendar },
+  { id: 'voting' as DashboardView, label: 'Гласувания', icon: Vote },
   { id: 'profile' as DashboardView, label: 'Профил', icon: User },
 ];
 

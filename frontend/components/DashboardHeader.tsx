@@ -62,7 +62,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
         <div className="flex items-center gap-2">
           <Building2 className="w-8 h-8 text-blue-600" />
           <div>
-            <span className="text-blue-600 block">Жилищни Входове</span>
+            <span className="text-blue-600 block"><b>SmartEntrance</b></span>
             <span className="text-gray-500 text-sm">
               {isBuildingManager ? 'Панел за управление' : 'бул. Витоша 10, вх. А'}
             </span>

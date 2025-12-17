@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { PaymentsPanel } from './PaymentsPanel';
 import { PaymentsPage } from './PaymentsPage';
 import { EventsPanel } from './EventsPanel';
+import { VotingPage } from './VotingPage';
 import { ProfilePage } from './ProfilePage';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -56,6 +57,8 @@ export function Dashboard({ onLogout }: DashboardProps) {
             </div>
           )}
           
+          {currentView === 'voting' && <VotingPage />}
+
           {currentView === 'profile' && <ProfilePage />}
         </main>
       </div>

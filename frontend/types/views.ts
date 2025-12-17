@@ -1,6 +1,6 @@
 // Dashboard view types
-export const dashboardViews = ['overview', 'payments', 'events', 'profile'] as const;
+export const dashboardViews = ['overview', 'payments', 'events', 'voting', 'profile'] as const;
 export type DashboardView = typeof dashboardViews[number];
 
-export const adminViews = ['overview', 'apartments', 'payments', 'events', 'announcements', 'reports'] as const;
+export const adminViews = ['overview', 'apartments', 'payments', 'events', 'voting', 'announcements', 'reports'] as const;
 export type AdminView = typeof adminViews[number];
