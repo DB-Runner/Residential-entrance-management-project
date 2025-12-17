@@ -20,6 +20,7 @@ export interface RegisterRequest {
   buildingCode?: string;
   buildingName?: string;
   buildingAddress?: string;
+  buildingPlaceId?: string;
   totalUnits?: number;
 }
 

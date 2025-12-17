@@ -19,6 +19,7 @@ export function Register() {
     apartment: '',
     buildingName: '',
     buildingAddress: '',
+    buildingPlaceId: '',
     totalUnits: ''
   });
   const [error, setError] = useState('');
@@ -45,17 +46,36 @@ const onPlaceChanged = () => {
 
   const place = autocompleteRef.current.getPlace();
 
-  if (!place || !place.formatted_address) {
+  if (!place.formatted_address || !place.address_components) {
+    setIsAddressSelectedFromGoogle(false);
+    return;
+  }
+
+  const components = place.address_components;
+
+  const hasNeighborhoodOrStreet = components.some(c =>
+    c.types.includes('route') ||
+    c.types.includes('sublocality') ||
+    c.types.includes('neighborhood')
+  );
+
+  const hasNumber = components.some(c =>
+    c.types.includes('street_number') ||
+    c.types.includes('premise')
+  );
+
+  if (!hasNeighborhoodOrStreet || !hasNumber) {
+    setError('Моля, въведете адрес с квартал/улица и номер.');
     setIsAddressSelectedFromGoogle(false);
     return;
   }
 
   setFormData(prev => ({
     ...prev,
-    buildingAddress: place.formatted_address || ''
+    buildingAddress: place.formatted_address as string,
+    buildingPlaceId: place.place_id as string
   }));
 
-  // ✅ адресът е валиден, защото е избран от Google
   setIsAddressSelectedFromGoogle(true);
 };
 
@@ -81,6 +101,16 @@ const onPlaceChanged = () => {
       const dbRole = role === 'admin' ? DBUserRole.BUILDING_MANAGER : DBUserRole.RESIDENT;
       
       console.log('Starting registration for role:', dbRole);
+
+      console.log('REGISTER PAYLOAD:', {
+        fullName: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: dbRole,
+        buildingAddress: formData.buildingAddress,
+        buildingPlaceId: formData.buildingPlaceId,
+        totalUnits: formData.totalUnits,
+      });
       
       const response = await authService.register({
         fullName: formData.name,
@@ -91,6 +121,7 @@ const onPlaceChanged = () => {
         buildingCode: role === 'resident' ? formData.buildingCode : undefined,
         buildingName: role === 'admin' ? formData.buildingName : undefined,
         buildingAddress: role === 'admin' ? formData.buildingAddress : undefined,
+        buildingPlaceId: role === 'admin' ? formData.buildingPlaceId : undefined,
         totalUnits: role === 'admin' ? parseInt(formData.totalUnits) : undefined,
       });
 
@@ -362,6 +393,10 @@ const onPlaceChanged = () => {
                       <Autocomplete
                         onLoad={onAutocompleteLoad}
                         onPlaceChanged={onPlaceChanged}
+                        options={{
+                          componentRestrictions: { country: 'bg' },
+                          types: ['address'],
+                        }}
                       >
                         <input
                           type="text"
@@ -371,6 +406,10 @@ const onPlaceChanged = () => {
                           onChange={(e) => {
                             handleChange(e);
                             setIsAddressSelectedFromGoogle(false);
+                            setFormData(prev => ({
+                              ...prev,
+                              buildingPlaceId: '' // ✅ reset if user types
+                            }));
                           }}
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="бул. Витоша 10"
