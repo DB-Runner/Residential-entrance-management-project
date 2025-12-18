@@ -1,4 +1,4 @@
-import { Search, Mail, MapPin, MoreVertical, Edit2, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { Search, Mail, MapPin, MoreVertical, Edit2, Trash2, Copy, CheckCircle2, Users as UsersIcon, Ruler } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { unitService } from '../services/unitService';
 import type { Unit } from '../types/database';
@@ -78,7 +78,7 @@ export function ApartmentsManagement() {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-gray-600 text-center">Зареж��ане на апартаменти...</p>
+        <p className="text-gray-600 text-center">Зарежане на апартаменти...</p>
       </div>
     );
   }
@@ -116,7 +116,8 @@ export function ApartmentsManagement() {
                 <th className="px-6 py-3 text-left text-gray-700">Код за достъп</th>
                 <th className="px-6 py-3 text-left text-gray-700">Име</th>
                 <th className="px-6 py-3 text-left text-gray-700">Контакти</th>
-                <th className="px-6 py-3 text-left text-gray-700">Баланс</th>
+                <th className="px-6 py-3 text-left text-gray-700">Квадратура</th>
+                <th className="px-6 py-3 text-left text-gray-700">Жители</th>
                 <th className="px-6 py-3 text-left text-gray-700">Статус</th>
                 <th className="px-6 py-3 text-right text-gray-700">Действия</th>
               </tr>
@@ -124,13 +125,12 @@ export function ApartmentsManagement() {
             <tbody className="divide-y">
               {filteredUnits.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-600">
                     {searchTerm ? 'Няма намерени апартаменти' : 'Няма апартаменти'}
                   </td>
                 </tr>
               ) : (
                 filteredUnits.map((unit) => {
-                  const balance = unit.balance?.balance || 0;
                   const isOccupied = !!unit.resident;
                   return (
                     <tr key={unit.id} className="hover:bg-gray-50 transition-colors">
@@ -189,15 +189,24 @@ export function ApartmentsManagement() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`${
-                          balance > 0
-                            ? 'text-green-600'
-                            : balance < 0
-                            ? 'text-red-600'
-                            : 'text-gray-600'
-                        }`}>
-                          {balance > 0 ? '+' : ''}{balance.toFixed(2)} лв
-                        </span>
+                        {unit.area ? (
+                          <div className="flex items-center gap-1 text-gray-700">
+                            <Ruler className="w-4 h-4" />
+                            <span>{unit.area} кв.м</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {unit.residents ? (
+                          <div className="flex items-center gap-1 text-gray-700">
+                            <UsersIcon className="w-4 h-4" />
+                            <span>{unit.residents}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {isOccupied ? (

@@ -5,6 +5,7 @@ import { ApartmentsManagement } from './ApartmentsManagement';
 import { PaymentsManagement } from './PaymentsManagement';
 import { EventsManagement } from './EventsManagement';
 import { VotingManagement } from './VotingManagement';
+import { ArchiveManagement } from './ArchiveManagement';
 import { HomesAndBuildings } from './HomesAndBuildings';
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -20,6 +21,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const navigate = useNavigate();
   const currentView = (view as AdminView) || 'overview';
   const { selectionType } = useSelection();
+
+  // Ако няма избран вход, пренасочи към избор на жилища/входове
+  useEffect(() => {
+    if (selectionType !== 'building') {
+      navigate('/dashboard/homes', { replace: true });
+    }
+  }, [selectionType, navigate]);
 
   // Validate view parameter
   useEffect(() => {
@@ -46,14 +54,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           {currentView === 'payments' && <PaymentsManagement />}
           {currentView === 'events' && <EventsManagement />}
           {currentView === 'voting' && <VotingManagement />}
-          {currentView === 'reports' && (
-            <div>
-              <h1 className="text-gray-900 mb-6">Отчети</h1>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600">Месечни и годишни отчети</p>
-              </div>
-            </div>
-          )}
+          {currentView === 'archive' && <ArchiveManagement />}
         </main>
       </div>
     </div>

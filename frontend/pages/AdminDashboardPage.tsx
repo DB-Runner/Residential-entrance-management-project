@@ -7,10 +7,13 @@ export function AdminDashboardPage() {
   const navigate = useNavigate();
   const { clearSelection } = useSelection();
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    // Първо изчистваме selection
     clearSelection();
-    navigate('/');
+    // После правим logout към backend
+    await authService.logout();
+    // Пренасочваме към login вместо към home page
+    navigate('/login', { replace: true });
   };
 
   return <AdminDashboard onLogout={handleLogout} />;

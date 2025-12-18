@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Receipt, Calendar, Vote, FileText, Home } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, Calendar, Vote, Archive, Home } from 'lucide-react';
 import { AdminView } from '../types/views';
 import { useSelection } from '../contexts/SelectionContext';
 
@@ -14,7 +14,7 @@ const menuItems = [
   { id: 'payments' as AdminView, label: 'Плащания', icon: Receipt },
   { id: 'events' as AdminView, label: 'Събития', icon: Calendar },
   { id: 'voting' as AdminView, label: 'Гласувания', icon: Vote },
-  { id: 'reports' as AdminView, label: 'Отчети', icon: FileText },
+  { id: 'archive' as AdminView, label: 'Архив', icon: Archive },
 ];
 
 export function AdminSidebar({ currentView, onViewChange }: AdminSidebarProps) {

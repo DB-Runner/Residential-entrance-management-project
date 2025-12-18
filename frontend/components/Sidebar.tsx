@@ -8,7 +8,7 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: 'homes' as DashboardView, label: 'Моите жилища', icon: Home },
+  { id: 'homes' as DashboardView, label: 'Начало', icon: Home },
   { id: 'overview' as DashboardView, label: 'Преглед', icon: LayoutDashboard },
   { id: 'payments' as DashboardView, label: 'Плащания', icon: Receipt },
   { id: 'events' as DashboardView, label: 'Събития', icon: Calendar },

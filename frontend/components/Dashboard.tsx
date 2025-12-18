@@ -9,6 +9,7 @@ import { HomesAndBuildings } from './HomesAndBuildings';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { DashboardView, dashboardViews } from '../types/views';
+import { useSelection } from '../contexts/SelectionContext';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -18,6 +19,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const { view } = useParams<{ view: string }>();
   const navigate = useNavigate();
   const currentView = (view as DashboardView) || 'overview';
+  const { selectionType } = useSelection();
+
+  // Ако има избран вход, пренасочи към admin dashboard
+  useEffect(() => {
+    if (selectionType === 'building') {
+      navigate('/admin/dashboard/overview', { replace: true });
+    }
+  }, [selectionType, navigate]);
 
   // Validate view parameter
   useEffect(() => {
