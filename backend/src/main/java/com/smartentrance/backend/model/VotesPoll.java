@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,34 +32,41 @@ public class VotesPoll {
 
     @Column(name = "start_at", nullable = false)
     @NotNull
-    private LocalDateTime startAt;
+    private Instant startAt;
 
     @Column(name = "end_at", nullable = false)
     @NotNull
-    private LocalDateTime endAt;
+    private Instant endAt;
 
     @ManyToOne
     @JoinColumn(name = "created_by")
     @ToString.Exclude
     private User createdBy;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "building_id", nullable = false)
+    @ToString.Exclude
+    private Building building;
+
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
     private List<VotesOption> options = new ArrayList<>();
 
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @ToString.Exclude
+    private List<UserVote> votes = new ArrayList<>();
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
     }
 }
