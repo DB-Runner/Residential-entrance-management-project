@@ -9,12 +9,12 @@ import com.smartentrance.backend.repository.UnitRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +60,10 @@ public class UnitService {
 
     public void saveAll(List<Unit> units){
         unitRepository.saveAll(units);
+    }
+
+    public Optional<Unit> findByIdAndResponsibleUser(Integer unitId, User user) {
+        return unitRepository.findByIdAndResponsibleUser(unitId, user);
     }
     public List<Unit> findAllByResponsibleUserId(Integer userId) {
         return unitRepository.findAllByResponsibleUserId(userId);

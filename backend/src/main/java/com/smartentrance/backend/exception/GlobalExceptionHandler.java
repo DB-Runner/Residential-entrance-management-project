@@ -47,6 +47,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "Database constraint violation: " + errorMessage);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalArgument(IllegalArgumentException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ProblemDetail> handleIllegalState(IllegalStateException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler({EntityNotFoundException.class, NoSuchElementException.class})
     public ResponseEntity<ProblemDetail> handleNotFound(Exception ex) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());

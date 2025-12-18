@@ -1,6 +1,8 @@
 package com.smartentrance.backend.controller;
 
 import com.smartentrance.backend.dto.enums.FilterType;
+import com.smartentrance.backend.dto.poll.CastVoteRequest;
+import com.smartentrance.backend.dto.poll.CastVoteResponse;
 import com.smartentrance.backend.dto.poll.CreatePollRequest;
 import com.smartentrance.backend.dto.poll.PollResponse;
 import com.smartentrance.backend.security.UserPrincipal;
@@ -37,5 +39,17 @@ public class VoteController {
     ) {
         PollResponse pollResponse = voteService.createPoll(buildingId, request, userPrincipal.user());
         return ResponseEntity.ok(pollResponse);
+    }
+
+    @PostMapping("/{buildingId}/polls/{pollId}/vote")
+    public ResponseEntity<CastVoteResponse> castVote(
+            @PathVariable Integer buildingId,
+            @PathVariable Integer pollId,
+            @Valid @RequestBody CastVoteRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        return ResponseEntity.ok(
+                voteService.castVote(buildingId, pollId, request, userPrincipal.user())
+        );
     }
 }

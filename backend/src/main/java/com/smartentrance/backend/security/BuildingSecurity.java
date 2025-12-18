@@ -3,8 +3,7 @@ package com.smartentrance.backend.security;
 import com.smartentrance.backend.repository.BuildingRepository;
 import com.smartentrance.backend.repository.UnitRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Component;
+ import org.springframework.stereotype.Component;
 
 @Component("buildingSecurity")
 @RequiredArgsConstructor
