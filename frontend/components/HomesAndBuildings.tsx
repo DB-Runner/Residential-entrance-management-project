@@ -59,6 +59,57 @@ export function HomesAndBuildings() {
         </p>
       </div>
 
+      {/* My Homes */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Home className="w-5 h-5 text-green-600" />
+            <h2 className="text-gray-900">Моите жилища</h2>
+          </div>
+          <button
+            onClick={() => setShowJoinHome(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Добави жилище
+          </button>
+        </div>
+
+        {data?.myHomes && data.myHomes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.myHomes.map((home) => (
+              <button
+                key={home.unitId}
+                onClick={() => handleUnitClick(home)}
+                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg hover:border-green-300 transition-all cursor-pointer text-left"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Home className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-gray-900 mb-1">Апартамент {home.unitNumber}</h3>
+                    <p className="text-gray-600 text-sm mb-1">{home.buildingName}</p>
+                    <div className="flex items-center gap-1 text-gray-500 text-sm">
+                      <MapPin className="w-4 h-4" />
+                      <span>{home.buildingAddress}</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+            <Home className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-600 mb-2">Все още не сте добавили жилища</p>
+            <p className="text-gray-500 text-sm">
+              Използвайте код за достъп за да добавите апартамент
+            </p>
+          </div>
+        )}
+      </section>
+
       {/* Managed Buildings */}
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -108,57 +159,6 @@ export function HomesAndBuildings() {
             <p className="text-gray-600 mb-2">Все още не управлявате входове</p>
             <p className="text-gray-500 text-sm">
               Създайте нов вход за да започнете управлението
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* My Homes */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Home className="w-5 h-5 text-green-600" />
-            <h2 className="text-gray-900">Моите жилища</h2>
-          </div>
-          <button
-            onClick={() => setShowJoinHome(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Добави жилище
-          </button>
-        </div>
-
-        {data?.myHomes && data.myHomes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.myHomes.map((home) => (
-              <button
-                key={home.unitId}
-                onClick={() => handleUnitClick(home)}
-                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg hover:border-green-300 transition-all cursor-pointer text-left"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Home className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-gray-900 mb-1">Апартамент {home.unitNumber}</h3>
-                    <p className="text-gray-600 text-sm mb-1">{home.buildingName}</p>
-                    <div className="flex items-center gap-1 text-gray-500 text-sm">
-                      <MapPin className="w-4 h-4" />
-                      <span>{home.buildingAddress}</span>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
-            <Home className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 mb-2">Все още не сте добавили жилища</p>
-            <p className="text-gray-500 text-sm">
-              Използвайте код за достъп за да добавите апартамент
             </p>
           </div>
         )}
@@ -281,7 +281,7 @@ function CreateBuildingModal({
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-gray-900 mb-4">Създаване на нов вход</h2>
 
@@ -411,7 +411,7 @@ function JoinHomeModal({
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-gray-900 mb-4">Добавяне на жилище</h2>
 

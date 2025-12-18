@@ -1,8 +1,9 @@
-import { Building2, User, LogOut, ChevronDown } from 'lucide-react';
+import { Building2, User, LogOut, ChevronDown, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import type { User as UserType } from '../types/database';
+import { useSelection } from '../contexts/SelectionContext';
 
 interface DashboardHeaderProps {
   onLogout: () => void;
@@ -14,6 +15,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
+  const { selectedBuilding } = useSelection();
 
   useEffect(() => {
     // Зареди текущия потребител от backend
@@ -72,6 +74,20 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
               </span>
             </div>
           </div>
+          
+          {/* Информация за избрания вход */}
+          {selectedBuilding && (
+            <>
+              <div className="h-8 w-px bg-gray-300"></div>
+              <div className="flex flex-col">
+                <span className="text-gray-900">{selectedBuilding.name}</span>
+                <div className="flex items-center gap-1 text-gray-500 text-sm">
+                  <MapPin className="w-3 h-3" />
+                  <span>{selectedBuilding.address}</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
         
         {/* Профил отдясно */}

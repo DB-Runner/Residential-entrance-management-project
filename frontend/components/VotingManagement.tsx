@@ -134,7 +134,7 @@ export function VotingManagement() {
       )}
 
       {/* Статистики */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -166,18 +166,6 @@ export function VotingManagement() {
           </div>
           <div className="text-gray-900">
             {polls.filter((p) => getPollStatus(p) === 'ended').length}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-orange-600" />
-            </div>
-            <span className="text-gray-600">Общо гласове</span>
-          </div>
-          <div className="text-gray-900">
-            {polls.reduce((sum, p) => sum + (p.totalVotes || 0), 0)}
           </div>
         </div>
       </div>
