@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_votes", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"poll_id", "user_id"})
+        @UniqueConstraint(columnNames = {"poll_id", "unit_id"})
 })
 @Data
 @NoArgsConstructor
@@ -22,25 +22,31 @@ public class UserVote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "poll_id", nullable = false)
     @NotNull
     @ToString.Exclude
     private VotesPoll poll;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_id", nullable = false)
+    @NotNull
+    @ToString.Exclude
+    private Unit unit;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @NotNull
     @ToString.Exclude
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "option_id", nullable = false)
     @NotNull
     @ToString.Exclude
     private VotesOption option;
 
-    @Column(name = "voted_at", nullable = false, updatable = false)
+    @Column(name = "voted_at", nullable = false)
     private LocalDateTime votedAt;
 
     @PrePersist
