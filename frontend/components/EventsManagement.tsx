@@ -1,4 +1,4 @@
-import { Plus, Calendar, Clock, MapPin, Users } from 'lucide-react';
+import { Plus, Calendar, Clock, MapPin, Users, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 const events = [
@@ -53,48 +53,34 @@ export function EventsManagement() {
       {/* Списък със събития */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {events.map((event) => (
-          <div key={event.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-gray-900">{event.title}</h3>
-                <button className="px-3 py-1 bg-blue-50 text-blue-600 rounded text-sm hover:bg-blue-100 transition-colors">
-                  Редактирай
-                </button>
-              </div>
-              
-              <p className="text-gray-600 text-sm mb-4">{event.description}</p>
-              
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Calendar className="w-4 h-4" />
-                  <span>{new Date(event.date).toLocaleDateString('bg-BG', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Clock className="w-4 h-4" />
-                  <span>{event.time}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <MapPin className="w-4 h-4" />
-                  <span>{event.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                  <Users className="w-4 h-4" />
-                  <span>{event.attendees} потвърдили присъствие</span>
-                </div>
-              </div>
+          <div key={event.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-gray-900">{event.title}</h3>
+              <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <Trash2 className="w-5 h-5" />
+              </button>
             </div>
-            <div className="border-t p-4 bg-gray-50 flex gap-3">
-              <button className="flex-1 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                Виж детайли
-              </button>
-              <button className="flex-1 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                Изтрий
-              </button>
+            
+            <p className="text-gray-600 text-sm mb-4">{event.description}</p>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-gray-600 text-sm">
+                <Calendar className="w-4 h-4" />
+                <span>{new Date(event.date).toLocaleDateString('bg-BG', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600 text-sm">
+                <Clock className="w-4 h-4" />
+                <span>{event.time}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600 text-sm">
+                <MapPin className="w-4 h-4" />
+                <span>{event.location}</span>
+              </div>
             </div>
           </div>
         ))}
