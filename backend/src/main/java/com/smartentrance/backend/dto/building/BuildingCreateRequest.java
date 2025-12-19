@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
-public record CreateBuildingRequest(
+public record BuildingCreateRequest(
         @NotBlank(message = "Address from Google is required")
         String address,
 

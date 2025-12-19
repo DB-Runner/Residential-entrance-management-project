@@ -1,6 +1,6 @@
 package com.smartentrance.backend.mapper;
 
-import com.smartentrance.backend.dto.user.RegisterUserRequest;
+import com.smartentrance.backend.dto.user.UserRegisterRequest;
 import com.smartentrance.backend.dto.user.UserResponse;
 import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.model.enums.UserRole;
@@ -22,7 +22,7 @@ public class UserMapper {
         return response;
     }
 
-    public User toEntity(RegisterUserRequest request) {
+    public User toEntity(UserRegisterRequest request) {
         if (request == null) {
             return null;
         }

@@ -2,11 +2,10 @@ package com.smartentrance.backend.service;
 
 import com.smartentrance.backend.dto.auth.LoginRequest;
 import com.smartentrance.backend.dto.auth.LoginResponse;
-import com.smartentrance.backend.dto.user.RegisterUserRequest;
+import com.smartentrance.backend.dto.user.UserRegisterRequest;
 import com.smartentrance.backend.dto.user.UserResponse;
 import com.smartentrance.backend.mapper.UserMapper;
 import com.smartentrance.backend.model.User;
-import com.smartentrance.backend.model.enums.UserRole;
 import com.smartentrance.backend.security.JwtService;
 import com.smartentrance.backend.security.UserPrincipal;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,7 +28,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
-    public LoginResponse register(RegisterUserRequest request) {
+    public LoginResponse register(UserRegisterRequest request) {
         User user = userMapper.toEntity(request);
 
         user.setHashedPassword(passwordEncoder.encode(request.getPassword()));

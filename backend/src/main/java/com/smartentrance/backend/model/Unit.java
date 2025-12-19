@@ -2,9 +2,7 @@ package com.smartentrance.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
@@ -44,7 +42,7 @@ public class Unit {
 
     @Column(name = "resident_count")
     @PositiveOrZero
-    private Integer residents;
+    private Integer residentsCount;
 
     @Column(name = "access_code", nullable = false, length = 8, unique = true)
     @NotNull

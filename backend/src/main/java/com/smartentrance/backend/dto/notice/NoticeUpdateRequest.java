@@ -1,9 +1,10 @@
 package com.smartentrance.backend.dto.notice;
 
 import jakarta.validation.constraints.FutureOrPresent;
+
 import java.time.Instant;
 
-public record UpdateNoticeRequest(
+public record NoticeUpdateRequest(
         String title,
 
         String description,

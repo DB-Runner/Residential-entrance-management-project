@@ -1,9 +1,9 @@
 package com.smartentrance.backend.service;
 
 import com.smartentrance.backend.dto.enums.FilterType;
+import com.smartentrance.backend.dto.notice.NoticeCreateRequest;
 import com.smartentrance.backend.dto.notice.NoticeResponse;
-import com.smartentrance.backend.dto.notice.CreateNoticeRequest;
-import com.smartentrance.backend.dto.notice.UpdateNoticeRequest;
+import com.smartentrance.backend.dto.notice.NoticeUpdateRequest;
 import com.smartentrance.backend.mapper.NoticeMapper;
 import com.smartentrance.backend.model.Notice;
 import com.smartentrance.backend.model.User;
@@ -26,8 +26,8 @@ public class NoticeService {
     private final NoticeMapper noticeMapper;
 
     @Transactional
-    @PreAuthorize("@buildingSecurity.isManager(#buildingId, principal.user.id)")
-    public NoticeResponse createNotice(Integer buildingId, CreateNoticeRequest request, User currentUser) {
+    @PreAuthorize("@buildingSecurity.isManager(#buildingId, principal.user)")
+    public NoticeResponse createNotice(Integer buildingId, NoticeCreateRequest request, User currentUser) {
         Notice event = Notice.builder()
                 .title(request.title())
                 .description(request.description())
@@ -42,7 +42,7 @@ public class NoticeService {
     }
 
     @Transactional(readOnly = true)
-    @PreAuthorize("@buildingSecurity.hasAccess(#buildingId, principal.user.id)")
+    @PreAuthorize("@buildingSecurity.hasAccess(#buildingId, principal.user)")
     public List<NoticeResponse> getNotices(Integer buildingId, FilterType filter) {
         Instant now = Instant.now();
         List<Notice> notices;
@@ -56,7 +56,7 @@ public class NoticeService {
     }
 
     @Transactional
-    @PreAuthorize("@buildingSecurity.canManageNotice(#noticeId, principal.user.id)")
+    @PreAuthorize("@buildingSecurity.canManageNotice(#noticeId, principal.user)")
     public void deleteNotice(Integer noticeId) {
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new EntityNotFoundException("Notice not found"));
@@ -69,8 +69,8 @@ public class NoticeService {
     }
 
     @Transactional
-    @PreAuthorize("@buildingSecurity.canManageNotice(#noticeId, principal.user.id)")
-    public NoticeResponse updateEvent(Integer noticeId, UpdateNoticeRequest updateData) {
+    @PreAuthorize("@buildingSecurity.canManageNotice(#noticeId, principal.user)")
+    public NoticeResponse updateEvent(Integer noticeId, NoticeUpdateRequest updateData) {
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found"));
