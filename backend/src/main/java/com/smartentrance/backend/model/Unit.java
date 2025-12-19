@@ -53,6 +53,9 @@ public class Unit {
     @ToString.Exclude
     private User responsibleUser;
 
+    @Column(nullable = false)
+    private boolean isVerified = false;
+
     @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude

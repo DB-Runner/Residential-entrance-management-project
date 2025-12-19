@@ -37,6 +37,7 @@ public class UnitService {
         unit.setResponsibleUser(currentUser);
         unit.setResidentsCount(request.residentsCount());
         unit.setArea(request.area());
+        unit.setVerified(false);
         unit.setAccessCode(generateUniqueAccessCode());
 
         return unitMapper.toResidentResponse(unitRepository.save(unit));
@@ -50,8 +51,18 @@ public class UnitService {
 
         unit.setArea(request.area());
         unit.setResidentsCount(request.residentsCount());
+        unit.setVerified(true);
 
         return unitMapper.toResidentResponse(unitRepository.save(unit));
+    }
+
+    @Transactional
+    @PreAuthorize("@buildingSecurity.canManageUnit(#unitId, principal)")
+    public void verifyUnit(Integer unitId) {
+        Unit unit = unitRepository.findById(unitId)
+                .orElseThrow(() -> new EntityNotFoundException("Unit not found"));
+
+        unit.setVerified(true);
     }
 
     @Transactional(readOnly = true)
