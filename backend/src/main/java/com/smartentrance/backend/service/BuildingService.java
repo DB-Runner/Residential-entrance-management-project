@@ -1,7 +1,7 @@
 package com.smartentrance.backend.service;
 
+import com.smartentrance.backend.dto.building.BuildingCreateRequest;
 import com.smartentrance.backend.dto.building.BuildingResponse;
-import com.smartentrance.backend.dto.building.CreateBuildingRequest;
 import com.smartentrance.backend.mapper.BuildingMapper;
 import com.smartentrance.backend.model.Building;
 import com.smartentrance.backend.model.Unit;
@@ -27,7 +27,7 @@ public class BuildingService {
     private final UserService userService;
 
     @Transactional
-    public BuildingResponse createBuildingWithSkeleton(CreateBuildingRequest request, User manager) {
+    public BuildingResponse createBuildingWithSkeleton(BuildingCreateRequest request, User manager) {
 
         if (buildingRepository.existsByGooglePlaceIdAndEntrance(request.googlePlaceId(), request.entrance().toUpperCase())) {
             throw new EntityExistsException("This building entrance is already registered.");
@@ -52,14 +52,22 @@ public class BuildingService {
                     .building(building)
                     .unitNumber(i)
                     .accessCode(unitService.generateUniqueAccessCode())
-                    .residents(0)
+                    .residentsCount(0)
                     .area(BigDecimal.ZERO)
                     .build());
         }
 
         unitService.saveAll(skeletonUnits);
 
-        return buildingMapper.toResponse(building, manager, request.totalUnits());
+        return buildingMapper.toResponse(building, request.totalUnits());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BuildingResponse> getManagedBuildings(User user) {
+        return buildingRepository.findAllByManagerId(user.getId())
+                .stream()
+                .map(buildingMapper::toResponse)
+                .toList();
     }
 
     public List<Building> findAllByManagerId(Integer managerId) {

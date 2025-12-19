@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.time.Instant;
-import java.time.Instant;
 
 @Entity
 @Table(name = "user_votes", uniqueConstraints = {

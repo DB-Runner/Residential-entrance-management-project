@@ -2,10 +2,10 @@ package com.smartentrance.backend.dto.poll;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.Size;
+
 import java.time.Instant;
 
-public record UpdatePollRequest(
+public record PollUpdateRequest(
 
         String title,
 

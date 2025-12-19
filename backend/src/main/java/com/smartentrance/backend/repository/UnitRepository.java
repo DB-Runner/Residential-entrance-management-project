@@ -19,7 +19,5 @@ public interface UnitRepository extends JpaRepository<Unit, Integer> {
 
     boolean existsByBuildingIdAndResponsibleUserId(Integer buildingId, Integer userId);
 
-    boolean existsByIdAndResponsibleUserId(Integer unitId, Integer userId);
-
-    Optional<Unit> findByIdAndResponsibleUser(Integer id, User responsibleUser);
+    List<Unit> findAllByBuildingIdOrderByUnitNumberAsc(Integer buildingId);
 }

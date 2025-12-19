@@ -1,8 +1,8 @@
 package com.smartentrance.backend.mapper;
 
+import com.smartentrance.backend.dto.enums.PollStatus;
 import com.smartentrance.backend.dto.poll.PollResponse;
 import com.smartentrance.backend.model.VotesPoll;
-import com.smartentrance.backend.dto.enums.PollStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;

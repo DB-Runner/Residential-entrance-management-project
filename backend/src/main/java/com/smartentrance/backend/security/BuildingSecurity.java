@@ -1,12 +1,13 @@
 package com.smartentrance.backend.security;
 
 import com.smartentrance.backend.model.Building;
+import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.repository.BuildingRepository;
 import com.smartentrance.backend.repository.NoticeRepository;
 import com.smartentrance.backend.repository.UnitRepository;
 import com.smartentrance.backend.repository.VotesPollRepository;
 import lombok.RequiredArgsConstructor;
- import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Component;
 
 @Component("buildingSecurity")
 @RequiredArgsConstructor
@@ -17,33 +18,37 @@ public class BuildingSecurity {
     private final NoticeRepository noticeRepository;
     private final VotesPollRepository pollRepository;
 
-    public boolean hasAccess(Integer buildingId, Integer userId) {
-        return buildingRepository.existsByIdAndManagerId(buildingId, userId)
-                || unitRepository.existsByBuildingIdAndResponsibleUserId(buildingId, userId);
+    public boolean canManageUnit(Integer unitId, User user) {
+        return unitRepository.findById(unitId)
+                .map(unit -> unit.getBuilding().getManager().getId().equals(user.getId()))
+                .orElse(false);
     }
 
-
-    public boolean isManager(Integer buildingId, Integer userId) {
-        return buildingRepository.existsByIdAndManagerId(buildingId, userId);
+    public boolean hasAccess(Integer buildingId, User user) {
+        return buildingRepository.existsByIdAndManagerId(buildingId, user.getId())
+                || unitRepository.existsByBuildingIdAndResponsibleUserId(buildingId, user.getId());
     }
 
-    public boolean canManageNotice(Integer noticeId, Integer userId) {
-        // 1. Търсим съобщението
+    public boolean isManager(Integer buildingId, User user) {
+        return buildingRepository.existsByIdAndManagerId(buildingId, user.getId());
+    }
+
+    public boolean canManageNotice(Integer noticeId, User user) {
         return noticeRepository.findById(noticeId)
                 .map(notice -> {
                     Building building = notice.getBuilding();
 
-                    return building.getManager().getId().equals(userId);
+                    return building.getManager().getId().equals(user.getId());
                 })
                 .orElse(false);
     }
 
-    public boolean canVote(Integer pollId, Integer unitId, Integer userId) {
+    public boolean canVote(Integer pollId, Integer unitId, User user) {
         return pollRepository.findById(pollId)
                 .map(poll -> unitRepository.findById(unitId)
                         .map(unit -> {
                             boolean isResponsible = unit.getResponsibleUser() != null
-                                    && unit.getResponsibleUser().getId().equals(userId);
+                                    && unit.getResponsibleUser().getId().equals(user.getId());
 
                             boolean sameBuilding = unit.getBuilding().getId().equals(poll.getBuilding().getId());
 
@@ -53,9 +58,9 @@ public class BuildingSecurity {
                 .orElse(false);
     }
 
-    public boolean canManagePoll(Integer pollId, Integer userId) {
+    public boolean canManagePoll(Integer pollId, User user) {
         return pollRepository.findById(pollId)
-                .map(poll -> poll.getBuilding().getManager().getId().equals(userId))
+                .map(poll -> poll.getBuilding().getManager().getId().equals(user.getId()))
                 .orElse(false);
     }
 }

@@ -1,7 +1,8 @@
 package com.smartentrance.backend.service;
 
-import com.smartentrance.backend.dto.unit.JoinUnitRequest;
+import com.smartentrance.backend.dto.unit.UnitJoinRequest;
 import com.smartentrance.backend.dto.unit.UnitResponse;
+import com.smartentrance.backend.dto.unit.UnitUpdateRequest;
 import com.smartentrance.backend.mapper.UnitMapper;
 import com.smartentrance.backend.model.Unit;
 import com.smartentrance.backend.model.User;
@@ -9,6 +10,7 @@ import com.smartentrance.backend.repository.UnitRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +26,7 @@ public class UnitService {
     private final UnitMapper unitMapper;
 
     @Transactional
-    public UnitResponse joinUnit(JoinUnitRequest request, User currentUser) {
+    public UnitResponse joinUnit(UnitJoinRequest request, User currentUser) {
         Unit unit = unitRepository.findByAccessCode(request.accessCode())
                 .orElseThrow(() -> new EntityNotFoundException("Invalid access code."));
 
@@ -33,11 +35,39 @@ public class UnitService {
         }
 
         unit.setResponsibleUser(currentUser);
-        unit.setResidents(request.residentsCount());
+        unit.setResidentsCount(request.residentsCount());
         unit.setArea(request.area());
         unit.setAccessCode(generateUniqueAccessCode());
 
-        return unitMapper.toResponse(unitRepository.save(unit));
+        return unitMapper.toResidentResponse(unitRepository.save(unit));
+    }
+
+    @Transactional
+    @PreAuthorize("@buildingSecurity.canManageUnit(#unitId, principal.user)")
+    public UnitResponse updateUnit(Integer unitId, UnitUpdateRequest request) {
+        Unit unit = unitRepository.findById(unitId)
+                .orElseThrow(() -> new EntityNotFoundException("Unit not found"));
+
+        unit.setArea(request.area());
+        unit.setResidentsCount(request.residentsCount());
+
+        return unitMapper.toResidentResponse(unitRepository.save(unit));
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("@buildingSecurity.isManager(#buildingId, principal.user)")
+    public List<UnitResponse> getUnitsByBuilding(Integer buildingId) {
+        return unitRepository.findAllByBuildingIdOrderByUnitNumberAsc(buildingId)
+                .stream()
+                .map(unitMapper::toManagementResponse)
+                .toList();
+    }
+
+    public List<UnitResponse> getMyUnits(User user) {
+        return unitRepository.findAllByResponsibleUserId(user.getId())
+                .stream()
+                .map(unitMapper::toResidentResponse)
+                .toList();
     }
 
     public String generateUniqueAccessCode() {

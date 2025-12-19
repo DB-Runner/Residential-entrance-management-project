@@ -7,7 +7,6 @@ import com.smartentrance.backend.service.PollService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +31,7 @@ public class PollController {
     @PostMapping("/buildings/{buildingId}/polls")
     public ResponseEntity<PollResponse> createPoll(
             @PathVariable Integer buildingId,
-            @Valid @RequestBody CreatePollRequest request,
+            @Valid @RequestBody PollCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         PollResponse pollResponse = pollService.createPoll(buildingId, request, userPrincipal.user());
@@ -40,9 +39,9 @@ public class PollController {
     }
 
     @PostMapping("/polls/{pollId}/vote")
-    public ResponseEntity<CastVoteResponse> castVote(
+    public ResponseEntity<VoteCastResponse> castVote(
             @PathVariable Integer pollId,
-            @Valid @RequestBody CastVoteRequest request,
+            @Valid @RequestBody VoteCastRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         return ResponseEntity.ok(
@@ -61,7 +60,7 @@ public class PollController {
     @PutMapping("/polls/{pollId}")
     public ResponseEntity<PollResponse> updatePoll(
             @PathVariable Integer pollId,
-            @Valid @RequestBody UpdatePollRequest request
+            @Valid @RequestBody PollUpdateRequest request
     ) {
         return ResponseEntity.ok(pollService.updatePoll(pollId, request));
     }

@@ -1,9 +1,9 @@
 package com.smartentrance.backend.controller;
 
 import com.smartentrance.backend.dto.enums.FilterType;
-import com.smartentrance.backend.dto.notice.CreateNoticeRequest;
+import com.smartentrance.backend.dto.notice.NoticeCreateRequest;
 import com.smartentrance.backend.dto.notice.NoticeResponse;
-import com.smartentrance.backend.dto.notice.UpdateNoticeRequest;
+import com.smartentrance.backend.dto.notice.NoticeUpdateRequest;
 import com.smartentrance.backend.security.UserPrincipal;
 import com.smartentrance.backend.service.NoticeService;
 import jakarta.validation.Valid;
@@ -25,7 +25,7 @@ public class NoticeController {
     @PostMapping("/buildings/{buildingId}/notices")
     public ResponseEntity<NoticeResponse> createNotice(
             @PathVariable Integer buildingId,
-            @Valid @RequestBody CreateNoticeRequest request,
+            @Valid @RequestBody NoticeCreateRequest request,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         NoticeResponse noticeResponse = noticeService.createNotice(buildingId, request, userPrincipal.user());
@@ -51,7 +51,7 @@ public class NoticeController {
     @PutMapping("/notices/{noticeId}")
     public ResponseEntity<NoticeResponse> updateEvent(
             @PathVariable Integer noticeId,
-            @RequestBody @Valid UpdateNoticeRequest updateData,
+            @RequestBody @Valid NoticeUpdateRequest updateData,
             @AuthenticationPrincipal UserPrincipal principal) {
 
         return ResponseEntity.ok(noticeService.updateEvent(noticeId, updateData));

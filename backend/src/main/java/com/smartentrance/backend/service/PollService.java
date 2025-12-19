@@ -28,8 +28,8 @@ public class PollService {
     private final PollMapper pollMapper;
 
     @Transactional
-    @PreAuthorize("@buildingSecurity.isManager(#buildingId, principal.user.id)")
-    public PollResponse createPoll(Integer buildingId, CreatePollRequest request, User currentUser) {
+    @PreAuthorize("@buildingSecurity.isManager(#buildingId, principal.user)")
+    public PollResponse createPoll(Integer buildingId, PollCreateRequest request, User currentUser) {
         if (request.endAt().isBefore(request.startAt())) {
             throw new IllegalArgumentException("End date cannot be before start date");
         }
@@ -58,7 +58,7 @@ public class PollService {
     }
 
     @Transactional(readOnly = true)
-    @PreAuthorize("@buildingSecurity.hasAccess(#buildingId, principal.user.id)")
+    @PreAuthorize("@buildingSecurity.hasAccess(#buildingId, principal.user)")
     public List<PollResponse> getPolls(Integer buildingId, FilterType filter) {
         Instant now = Instant.now();
         List<VotesPoll> polls;
@@ -75,8 +75,8 @@ public class PollService {
     }
 
     @Transactional
-    @PreAuthorize("@buildingSecurity.canVote(#pollId, #request.unitId(), principal.user.id)")
-    public CastVoteResponse castVote(Integer pollId, CastVoteRequest request, User currentUser) {
+    @PreAuthorize("@buildingSecurity.canVote(#pollId, #request.unitId(), principal.user)")
+    public VoteCastResponse castVote(Integer pollId, VoteCastRequest request, User currentUser) {
 
         VotesPoll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new EntityNotFoundException("Poll not found"));
@@ -110,11 +110,11 @@ public class PollService {
 
         UserVote savedVote = userVoteRepository.save(vote);
 
-        return new CastVoteResponse(savedVote.getId(), unit.getUnitNumber(), savedVote.getVotedAt());
+        return new VoteCastResponse(savedVote.getId(), unit.getUnitNumber(), savedVote.getVotedAt());
     }
 
     @Transactional
-    @PreAuthorize("@buildingSecurity.canManagePoll(#pollId, principal.user.id)")
+    @PreAuthorize("@buildingSecurity.canManagePoll(#pollId, principal.user)")
     public void deletePoll(Integer pollId) {
         VotesPoll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new EntityNotFoundException("Poll not found"));
@@ -131,8 +131,8 @@ public class PollService {
     }
 
     @Transactional
-    @PreAuthorize("@buildingSecurity.canManagePoll(#pollId, principal.user.id)")
-    public PollResponse updatePoll(Integer pollId, UpdatePollRequest request) {
+    @PreAuthorize("@buildingSecurity.canManagePoll(#pollId, principal.user)")
+    public PollResponse updatePoll(Integer pollId, PollUpdateRequest request) {
         VotesPoll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new EntityNotFoundException("Poll not found"));
 

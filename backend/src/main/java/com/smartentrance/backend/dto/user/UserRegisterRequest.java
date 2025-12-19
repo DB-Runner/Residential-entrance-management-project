@@ -1,10 +1,11 @@
 package com.smartentrance.backend.dto.user;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class RegisterUserRequest {
+public class UserRegisterRequest {
     @NotBlank
     private String firstName;
 

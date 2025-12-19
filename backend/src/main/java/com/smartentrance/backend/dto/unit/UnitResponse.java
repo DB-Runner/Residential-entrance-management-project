@@ -7,7 +7,10 @@ public record UnitResponse(
         Integer unitNumber,
         BigDecimal area,
         Integer residents,
-        String buildingName,
-        String buildingAddress,
-        boolean isOccupied
-) {}
+        String accessCode,
+        BuildingInfo buildingInfo,
+        OwnerInfo ownerInfo
+) {
+    public record BuildingInfo(Integer id, String name, String address) {}
+    public record OwnerInfo (Integer id, String firstName, String lastName, String email) {}
+}

@@ -1,6 +1,5 @@
 package com.smartentrance.backend.mapper;
 
-import com.smartentrance.backend.dto.dashboard.ResidentUnit;
 import com.smartentrance.backend.dto.unit.UnitResponse;
 import com.smartentrance.backend.model.Unit;
 import org.springframework.stereotype.Component;
@@ -8,26 +7,44 @@ import org.springframework.stereotype.Component;
 @Component
 public class UnitMapper {
 
-    public UnitResponse toResponse(Unit unit) {
-        boolean isOccupied = unit.getResponsibleUser() != null;
-
+    public UnitResponse toManagementResponse(Unit unit) {
         return new UnitResponse(
                 unit.getId(),
                 unit.getUnitNumber(),
                 unit.getArea(),
-                unit.getResidents(),
-                unit.getBuilding() != null ? unit.getBuilding().getName() : null,
-                unit.getBuilding() != null ? unit.getBuilding().getAddress() : null,
-                isOccupied
+                unit.getResidentsCount(),
+                unit.getAccessCode(),
+                null,
+                mapToOwnerInfo(unit)
         );
     }
 
-    public ResidentUnit toResidentUnit(Unit unit) {
-        return new ResidentUnit(
+    public UnitResponse toResidentResponse(Unit unit) {
+        return new UnitResponse(
                 unit.getId(),
                 unit.getUnitNumber(),
-                unit.getBuilding().getName(),
-                unit.getBuilding().getAddress()
+                unit.getArea(),
+                unit.getResidentsCount(),
+                null,
+                new UnitResponse.BuildingInfo(
+                        unit.getBuilding().getId(),
+                        unit.getBuilding().getName(),
+                        unit.getBuilding().getAddress()
+                ),
+                mapToOwnerInfo(unit)
+        );
+    }
+
+    private UnitResponse.OwnerInfo mapToOwnerInfo(Unit unit) {
+        if (unit.getResponsibleUser() == null) {
+            return null;
+        }
+
+        return new UnitResponse.OwnerInfo(
+                unit.getResponsibleUser().getId(),
+                unit.getResponsibleUser().getFirstName(),
+                unit.getResponsibleUser().getLastName(),
+                unit.getResponsibleUser().getEmail()
         );
     }
 }
