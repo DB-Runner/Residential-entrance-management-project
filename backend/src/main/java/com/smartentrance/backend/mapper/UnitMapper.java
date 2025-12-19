@@ -14,6 +14,7 @@ public class UnitMapper {
                 unit.getArea(),
                 unit.getResidentsCount(),
                 unit.getAccessCode(),
+                unit.isVerified(),
                 null,
                 mapToOwnerInfo(unit)
         );
@@ -26,11 +27,8 @@ public class UnitMapper {
                 unit.getArea(),
                 unit.getResidentsCount(),
                 null,
-                new UnitResponse.BuildingInfo(
-                        unit.getBuilding().getId(),
-                        unit.getBuilding().getName(),
-                        unit.getBuilding().getAddress()
-                ),
+                unit.isVerified(),
+                mapToBuildingInfo(unit),
                 mapToOwnerInfo(unit)
         );
     }
@@ -45,6 +43,14 @@ public class UnitMapper {
                 unit.getResponsibleUser().getFirstName(),
                 unit.getResponsibleUser().getLastName(),
                 unit.getResponsibleUser().getEmail()
+        );
+    }
+
+    private UnitResponse.BuildingInfo mapToBuildingInfo(Unit unit) {
+        return new UnitResponse.BuildingInfo(
+                unit.getBuilding().getId(),
+                unit.getBuilding().getName(),
+                unit.getBuilding().getAddress()
         );
     }
 }

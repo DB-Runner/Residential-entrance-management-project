@@ -8,6 +8,7 @@ public record UnitResponse(
         BigDecimal area,
         Integer residents,
         String accessCode,
+        boolean isVerified,
         BuildingInfo buildingInfo,
         OwnerInfo ownerInfo
 ) {

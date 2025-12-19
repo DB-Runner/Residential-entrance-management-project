@@ -44,4 +44,10 @@ public class UnitController {
     public ResponseEntity<List<UnitResponse>> getMyUnits(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(unitService.getMyUnits(userPrincipal.user()));
     }
+
+    @PatchMapping("/units/{unitId}/verify")
+    public ResponseEntity<Void> verifyUnit(@PathVariable Integer unitId) {
+        unitService.verifyUnit(unitId);
+        return ResponseEntity.noContent().build();
+    }
 }
