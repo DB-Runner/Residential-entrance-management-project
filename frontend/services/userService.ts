@@ -1,8 +1,9 @@
 import { api } from '../config/api';
-import type { User, UserRole } from '../types/database';
+import type { User } from '../types/database';
 
 export interface UpdateProfileRequest {
-  fullName?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
 }
 
@@ -14,15 +15,6 @@ export interface ChangePasswordRequest {
 export const userService = {
   // Вземи всички потребители (admin)
   getAllUsers: () => api.get<User[]>('/users'),
-
-  // Вземи потребители по роля (admin)
-  getUsersByRole: (role: UserRole) => api.get<User[]>(`/users?role=${role}`),
-
-  // Вземи всички жители (admin)
-  getResidents: () => api.get<User[]>('/users?role=RESIDENT'),
-
-  // Вземи всички администратори (admin)
-  getAdmins: () => api.get<User[]>('/users?role=ADMIN'),
 
   // Вземи потребител по ID (admin)
   getUserById: (id: number) => api.get<User>(`/users/${id}`),
@@ -40,8 +32,4 @@ export const userService = {
 
   // Изтрий потребител (admin)
   deleteUser: (id: number) => api.delete<void>(`/users/${id}`),
-
-  // Промени роля на потребител (admin)
-  changeUserRole: (userId: number, role: UserRole) =>
-    api.patch<User>(`/users/${userId}/role`, { role }),
 };

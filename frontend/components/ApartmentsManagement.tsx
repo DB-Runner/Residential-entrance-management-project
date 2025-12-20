@@ -1,18 +1,25 @@
-import { Search, Mail, MapPin, MoreVertical, Edit2, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { Search, Mail, MapPin, MoreVertical, Edit2, Trash2, Copy, CheckCircle2, Users as UsersIcon, Ruler, AlertTriangle, Check, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { unitService } from '../services/unitService';
-import type { Unit } from '../types/database';
+import { unitService, type UnitResponseFromAPI } from '../services/unitService';
+import { toast } from 'sonner';
+import { useSelection } from '../contexts/SelectionContext';
 
 export function ApartmentsManagement() {
+  const { selectedBuilding } = useSelection();
   const [searchTerm, setSearchTerm] = useState('');
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [units, setUnits] = useState<UnitResponseFromAPI[]>([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [editingUnit, setEditingUnit] = useState<UnitResponseFromAPI | null>(null);
+  const [formData, setFormData] = useState({ area: 0, residentsCount: 0 });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    loadUnits();
-  }, []);
+    if (selectedBuilding) {
+      loadUnits();
+    }
+  }, [selectedBuilding]);
 
   // Затваряне на менюто при клик извън него
   useEffect(() => {
@@ -33,9 +40,11 @@ export function ApartmentsManagement() {
   }, [openMenuId]);
 
   const loadUnits = async () => {
+    if (!selectedBuilding) return;
+    
     try {
       setLoading(true);
-      const data = await unitService.getAll();
+      const data = await unitService.getAllByBuilding(selectedBuilding.id);
       setUnits(data);
     } catch (err) {
       console.error('Error loading units:', err);
@@ -50,29 +59,60 @@ export function ApartmentsManagement() {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const handleEdit = (unit: Unit) => {
+  const handleEdit = (unit: UnitResponseFromAPI) => {
     console.log('Редактиране на:', unit);
-    // TODO: Отваряне на модал за редактиране
+    setEditingUnit(unit);
+    setFormData({ area: unit.area || 0, residentsCount: unit.residents || 0 });
     setOpenMenuId(null);
   };
 
-  const handleDelete = async (unit: Unit) => {
+  const handleVerify = async (unit: UnitResponseFromAPI) => {
+    try {
+      await unitService.verify(unit.id);
+      toast.success('Данните са потвърдени успешно');
+      await loadUnits(); // Презареждане на данните
+    } catch (err) {
+      console.error('Грешка при потвърждаване:', err);
+      toast.error('Грешка при потвърждаване на данните');
+    }
+  };
+
+  const handleDelete = async (unit: UnitResponseFromAPI) => {
     if (window.confirm(`Сигурни ли сте, че искате да изтриете апартамент ${unit.unitNumber}?`)) {
       try {
         await unitService.delete(unit.id);
         await loadUnits(); // Презареждане на данните
         console.log('Изтрит апартамент:', unit);
+        toast.success('Апартаментът беше успешно изтрит');
       } catch (err) {
         console.error('Грешка при изтриване:', err);
         alert('Грешка при изтриване на апартамент');
+        toast.error('Грешка при изтриване на апартамент');
       }
     }
     setOpenMenuId(null);
   };
 
+  const handleSaveEdit = async () => {
+    if (!editingUnit) return;
+
+    try {
+      setIsSaving(true);
+      await unitService.update(editingUnit.id, formData);
+      toast.success('Данните са актуализирани успешно');
+      await loadUnits();
+      setEditingUnit(null);
+    } catch (err) {
+      console.error('Грешка при актуализация:', err);
+      toast.error('Грешка при актуализация на данните');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const filteredUnits = units.filter(unit =>
-    (unit.unitNumber && unit.unitNumber.includes(searchTerm)) ||
-    (unit.resident && unit.resident.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
+    unit.unitNumber.toString().includes(searchTerm) ||
+    (unit.ownerInfo && `${unit.ownerInfo.firstName} ${unit.ownerInfo.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (loading) {
@@ -116,7 +156,8 @@ export function ApartmentsManagement() {
                 <th className="px-6 py-3 text-left text-gray-700">Код за достъп</th>
                 <th className="px-6 py-3 text-left text-gray-700">Име</th>
                 <th className="px-6 py-3 text-left text-gray-700">Контакти</th>
-                <th className="px-6 py-3 text-left text-gray-700">Баланс</th>
+                <th className="px-6 py-3 text-left text-gray-700">Квадратура</th>
+                <th className="px-6 py-3 text-left text-gray-700">Жители</th>
                 <th className="px-6 py-3 text-left text-gray-700">Статус</th>
                 <th className="px-6 py-3 text-right text-gray-700">Действия</th>
               </tr>
@@ -124,14 +165,13 @@ export function ApartmentsManagement() {
             <tbody className="divide-y">
               {filteredUnits.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-600">
                     {searchTerm ? 'Няма намерени апартаменти' : 'Няма апартаменти'}
                   </td>
                 </tr>
               ) : (
                 filteredUnits.map((unit) => {
-                  const balance = unit.balance?.balance || 0;
-                  const isOccupied = !!unit.resident;
+                  const isOccupied = !!unit.ownerInfo;
                   return (
                     <tr key={unit.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
@@ -163,25 +203,36 @@ export function ApartmentsManagement() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {isOccupied && unit.resident ? (
+                        {isOccupied && unit.ownerInfo ? (
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                               <span className="text-blue-600">
-                                {unit.resident.fullName.split(' ').map(n => n[0]).join('')}
+                                {unit.ownerInfo.firstName[0]}{unit.ownerInfo.lastName[0]}
                               </span>
                             </div>
-                            <span className="text-gray-900">{unit.resident.fullName}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-900">{unit.ownerInfo.firstName} {unit.ownerInfo.lastName}</span>
+                              {unit.isVerified === false && (
+                                <button
+                                  onClick={() => handleVerify(unit)}
+                                  className="p-1 hover:bg-yellow-100 rounded transition-colors"
+                                  title="Потвърди данни"
+                                >
+                                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ) : (
-                          <span className="text-gray-400 italic">Свободен</span>
+                          <span className="text-gray-400 italic">Няма информация</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        {isOccupied && unit.resident ? (
+                        {isOccupied && unit.ownerInfo ? (
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-gray-600 text-sm">
                               <Mail className="w-4 h-4" />
-                              <span>{unit.resident.email}</span>
+                              <span>{unit.ownerInfo.email}</span>
                             </div>
                           </div>
                         ) : (
@@ -189,24 +240,39 @@ export function ApartmentsManagement() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`${
-                          balance > 0
-                            ? 'text-green-600'
-                            : balance < 0
-                            ? 'text-red-600'
-                            : 'text-gray-600'
-                        }`}>
-                          {balance > 0 ? '+' : ''}{balance.toFixed(2)} лв
-                        </span>
+                        {unit.area ? (
+                          <div className="flex items-center gap-1 text-gray-700">
+                            <Ruler className="w-4 h-4" />
+                            <span>{unit.area} кв.м</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
-                        {isOccupied ? (
-                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-                            Активен
+                        {unit.residents ? (
+                          <div className="flex items-center gap-1 text-gray-700">
+                            <UsersIcon className="w-4 h-4" />
+                            <span>{unit.residents}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {unit.isVerified === true ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                            <Check className="w-4 h-4" />
+                            Потвърден
+                          </span>
+                        ) : unit.isVerified === false && unit.ownerInfo ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">
+                            <AlertTriangle className="w-4 h-4" />
+                            Непотвърден
                           </span>
                         ) : (
                           <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                            Свободен
+                            Няма информация
                           </span>
                         )}
                       </td>
@@ -234,6 +300,15 @@ export function ApartmentsManagement() {
                                 <Trash2 className="w-4 h-4" />
                                 Изтрий
                               </button>
+                              {unit.isVerified === false && (
+                                <button
+                                  className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+                                  onClick={() => handleVerify(unit)}
+                                >
+                                  <Check className="w-4 h-4" />
+                                  Потвърди
+                                </button>
+                              )}
                             </div>
                           </div>
                         )}
@@ -246,6 +321,76 @@ export function ApartmentsManagement() {
           </table>
         </div>
       </div>
+
+      {/* Модал за редактиране */}
+      {editingUnit && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-gray-900">Редактиране на апартамент</h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  Апатамент № {editingUnit.unitNumber}
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingUnit(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Квадратура (кв.м)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.area || ''}
+                  onChange={(e) => setFormData({ ...formData, area: e.target.value === '' ? 0 : Number(e.target.value) })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="75"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-2">
+                  Брой жители
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.residentsCount || ''}
+                  onChange={(e) => setFormData({ ...formData, residentsCount: e.target.value === '' ? 0 : Number(e.target.value) })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="3"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setEditingUnit(null)}
+                disabled={isSaving}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Отказ
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {isSaving ? 'Запазване...' : 'Запази'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

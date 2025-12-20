@@ -1,4 +1,6 @@
-import { Users, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, AlertCircle, Building2 } from 'lucide-react';
+import { useSelection } from '../contexts/SelectionContext';
+import { useNavigate } from 'react-router-dom';
 
 const stats = [
   {
@@ -39,6 +41,9 @@ const recentPayments = [
 ];
 
 export function AdminOverview() {
+  const { selectedBuilding } = useSelection();
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
       <div>

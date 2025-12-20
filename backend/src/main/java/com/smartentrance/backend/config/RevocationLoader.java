@@ -1,8 +1,8 @@
 package com.smartentrance.backend.config;
 
-import com.smartentrance.backend.security.TokenRevocationService;
 import com.smartentrance.backend.model.RevocationEntry;
 import com.smartentrance.backend.repository.RevocationRepository;
+import com.smartentrance.backend.security.TokenRevocationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;

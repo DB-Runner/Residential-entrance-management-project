@@ -1,13 +1,15 @@
 import { DashboardHeader } from './DashboardHeader';
 import { Sidebar } from './Sidebar';
-import { PaymentsPanel } from './PaymentsPanel';
+import { Overview } from './Overview';
 import { PaymentsPage } from './PaymentsPage';
-import { EventsPanel } from './EventsPanel';
+import { EventsPage } from './EventsPage';
 import { VotingPage } from './VotingPage';
 import { ProfilePage } from './ProfilePage';
+import { HomesAndBuildings } from './HomesAndBuildings';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { DashboardView, dashboardViews } from '../types/views';
+import { useSelection } from '../contexts/SelectionContext';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -17,6 +19,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const { view } = useParams<{ view: string }>();
   const navigate = useNavigate();
   const currentView = (view as DashboardView) || 'overview';
+  const { selectionType } = useSelection();
 
   // Validate view parameter
   useEffect(() => {
@@ -37,25 +40,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
         <Sidebar currentView={currentView} onViewChange={handleViewChange} />
         
         <main className="flex-1 p-6 ml-64">
-          {currentView === 'overview' && (
-            <div className="space-y-6">
-              <h1 className="text-gray-900">Преглед</h1>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <PaymentsPanel />
-                <EventsPanel />
-              </div>
-            </div>
-          )}
+          {currentView === 'homes' && <HomesAndBuildings />}
+          
+          {currentView === 'overview' && <Overview />}
           
           {currentView === 'payments' && <PaymentsPage />}
           
-          {currentView === 'events' && (
-            <div>
-              <h1 className="text-gray-900 mb-6">Събития</h1>
-              <EventsPanel expanded />
-            </div>
-          )}
+          {currentView === 'events' && <EventsPage />}
           
           {currentView === 'voting' && <VotingPage />}
 

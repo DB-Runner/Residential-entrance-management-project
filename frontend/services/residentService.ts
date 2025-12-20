@@ -1,5 +1,5 @@
 import { api } from '../config/api';
-import { type User, type Unit, type UnitBalance, UserRole } from '../types/database';
+import { type User, type Unit, type UnitBalance } from '../types/database';
 
 export interface ResidentWithUnit extends User {
   unit?: Unit & { balance?: UnitBalance };
@@ -10,25 +10,25 @@ export interface ResidentWithUnit extends User {
 const MOCK_RESIDENTS: ResidentWithUnit[] = [
   {
     id: 1,
-    fullName: 'Иван Петров',
+    firstName: 'Иван',
+    lastName: 'Петров',
     email: 'resident@test.com',
-    role: UserRole.RESIDENT,
     unitNumber: '12',
     createdAt: '2024-01-15T10:00:00',
   },
   {
     id: 3,
-    fullName: 'Георги Димитров',
+    firstName: 'Георги',
+    lastName: 'Димитров',
     email: 'georgi@example.com',
-    role: UserRole.RESIDENT,
     unitNumber: '8',
     createdAt: '2024-02-20T11:30:00',
   },
   {
     id: 4,
-    fullName: 'Елена Иванова',
+    firstName: 'Елена',
+    lastName: 'Иванова',
     email: 'elena@example.com',
-    role: UserRole.RESIDENT,
     unitNumber: '15',
     createdAt: '2024-03-10T14:15:00',
   },
@@ -56,14 +56,13 @@ export const residentService = {
   },
 
   // Добави нов жител (за администратори)
-  create: async (data: { fullName: string; email: string; unitNumber: string }): Promise<ResidentWithUnit> => {
+  create: async (data: { firstName: string; lastName: string; email: string; unitNumber: string }): Promise<ResidentWithUnit> => {
     try {
       return await api.post<ResidentWithUnit>('/residents', data);
     } catch (error) {
       const newResident: ResidentWithUnit = {
         id: Math.floor(Math.random() * 1000) + 100,
         ...data,
-        role: UserRole.RESIDENT,
         createdAt: new Date().toISOString(),
       };
       return newResident;

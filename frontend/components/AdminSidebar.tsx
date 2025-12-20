@@ -1,9 +1,6 @@
-import { LayoutDashboard, Users, Receipt, Calendar, Vote, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, Calendar, Vote, Archive, Home } from 'lucide-react';
 import { AdminView } from '../types/views';
-import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
-import { UserRole } from '../types/database';
-import { useEffect, useState } from 'react';
+import { useSelection } from '../contexts/SelectionContext';
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -11,57 +8,31 @@ interface AdminSidebarProps {
 }
 
 const menuItems = [
+  { id: 'homes' as AdminView, label: 'Моите жилища', icon: Home },
   { id: 'overview' as AdminView, label: 'Преглед', icon: LayoutDashboard },
   { id: 'apartments' as AdminView, label: 'Апартаменти', icon: Users },
   { id: 'payments' as AdminView, label: 'Плащания', icon: Receipt },
   { id: 'events' as AdminView, label: 'Събития', icon: Calendar },
   { id: 'voting' as AdminView, label: 'Гласувания', icon: Vote },
-  { id: 'reports' as AdminView, label: 'Отчети', icon: FileText },
+  { id: 'archive' as AdminView, label: 'Архив', icon: Archive },
 ];
 
 export function AdminSidebar({ currentView, onViewChange }: AdminSidebarProps) {
-  const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-
-  useEffect(() => {
-    // Вземи ролята от localStorage
-    const role = authService.getUserRole();
-    setUserRole(role);
-  }, []);
-
-  const handleSwitchToResident = () => {
-    navigate('/dashboard');
-  };
-
-  const isBuildingManager = userRole === UserRole.BUILDING_MANAGER;
+  const { selectedBuilding } = useSelection();
 
   return (
-    <aside className="w-64 bg-white border-r fixed left-0 top-[73px] bottom-0 overflow-y-auto">
-      <nav className="p-6">
-        {/* Slide Switch за превключване между панели */}
-        {isBuildingManager && (
-          <div className="mb-6 pb-6 border-b">
-            <div className="text-xs text-gray-500 mb-3"> </div>
-            <div className="flex items-center justify-center gap-2 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={handleSwitchToResident}
-                className="flex-1 px-3 py-2 rounded-md text-sm transition-colors text-gray-600 hover:text-gray-900"
-              >
-                Жител
-              </button>
-              <button
-                className="flex-1 px-0.5 py-2 rounded-md text-sm transition-colors bg-white text-blue-600 shadow-sm font-medium"
-              >
-                Домоуправител
-              </button>
-            </div>
-          </div>
-        )}
-        
+    <aside className="w-64 bg-white border-r fixed left-0 top-[85px] bottom-0 overflow-y-auto">
+      <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
+            // Показва само "Моите жилища" ако няма избран вход (освен ако не сме на профил)
+            const shouldShow = !selectedBuilding ? item.id === 'homes' : true;
+            // Ако currentView е 'profile', третираме го като че има избран вход
+            const isProfileView = currentView === 'profile';
+            
+            if (!shouldShow && !isProfileView) return null;
             
             return (
               <li key={item.id}>

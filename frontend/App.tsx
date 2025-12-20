@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useJsApiLoader } from '@react-google-maps/api';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -7,23 +8,31 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { PaymentCheckoutPage } from './pages/PaymentCheckoutPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthRedirect } from './components/AuthRedirect';
+import { SelectionProvider } from './contexts/SelectionContext';
 import { useEffect, useState } from 'react';
 import { authService } from './services/authService';
+import { Toaster } from './components/ui/sonner';
+
+const libraries: ('places')[] = ['places'];
 
 export default function App() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
+  // Make Google Maps API key optional
+  const googleMapsKey = import.meta.env?.VITE_GOOGLE_MAPS_KEY || '';
+  
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: googleMapsKey,
+    libraries,
+  });
+
   useEffect(() => {
-    // При зареждане на приложението проверяваме дали има активна сесия (cookie)
     const checkAuth = async () => {
       try {
-        // Опит да вземем текущия user от backend
-        // Ако има валиден cookie (session или remember-me), backend ще върне user данни
         await authService.me();
         console.log('User authenticated via cookie');
-      } catch (error) {
+      } catch {
         console.log('No valid session found');
-        // Няма валидна сесия - нормално
       } finally {
         setIsCheckingAuth(false);
       }
@@ -32,7 +41,7 @@ export default function App() {
     checkAuth();
   }, []);
 
-  // Показваме loading screen докато проверяваме сесията
+  // Auth loading
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -44,77 +53,88 @@ export default function App() {
     );
   }
 
+  // Skip Google Maps loading check if no API key provided
+  if (googleMapsKey && !isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading Google Maps…</p>
+      </div>
+    );
+  }
+
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Публични страници */}
-        <Route path="/" element={<HomePage />} />
-        <Route 
-          path="/login" 
-          element={
-            <AuthRedirect>
-              <LoginPage />
-            </AuthRedirect>
-          } 
-        />
-        <Route 
-          path="/register" 
-          element={
-            <AuthRedirect>
-              <RegisterPage />
-            </AuthRedirect>
-          } 
-        />
-        
-        {/* Защитени страници - Жители Dashboard */}
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Navigate to="/dashboard/overview" replace />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/dashboard/:view" 
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Защитени страници - Админ Dashboard */}
-        <Route 
-          path="/admin/dashboard" 
-          element={
-            <ProtectedRoute requireAdmin={true}>
-              <Navigate to="/admin/dashboard/overview" replace />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/dashboard/:view" 
-          element={
-            <ProtectedRoute requireAdmin={true}>
-              <AdminDashboardPage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Защитени страници - Плащане */}
-        <Route 
-          path="/payment/checkout" 
-          element={
-            <ProtectedRoute>
-              <PaymentCheckoutPage />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Пренасочване за непознати пътища */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <SelectionProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Публични */}
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/login"
+            element={
+              <AuthRedirect>
+                <LoginPage />
+              </AuthRedirect>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <AuthRedirect>
+                <RegisterPage />
+              </AuthRedirect>
+            }
+          />
+
+          {/* Жители */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/dashboard/homes" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/:view"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Админ (kept for backward compatibility but works same as resident) */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/admin/dashboard/homes" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard/:view"
+            element={
+              <ProtectedRoute>
+                <AdminDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Плащане */}
+          <Route
+            path="/payment/checkout"
+            element={
+              <ProtectedRoute>
+                <PaymentCheckoutPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <Toaster />
+      </BrowserRouter>
+    </SelectionProvider>
   );
 }

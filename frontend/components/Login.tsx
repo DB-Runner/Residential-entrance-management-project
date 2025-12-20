@@ -2,7 +2,6 @@ import { Building2, Mail, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { UserRole as DBUserRole } from '../types/database';
 
 export function Login() {
   const navigate = useNavigate();
@@ -29,7 +28,7 @@ export function Login() {
     setLoading(true);
 
     try {
-      const response = await authService.login({ email, password, rememberMe });
+      await authService.login({ email, password, rememberMe });
       // Ако rememberMe е true, запазваме имейла в localStorage
       if (rememberMe) {
         localStorage.setItem('rememberedEmail', email);
@@ -40,22 +39,8 @@ export function Login() {
         localStorage.removeItem('rememberMe');
       }
       
-      // Ако rememberMe е true, запазваме имейла в localStorage
-      if (rememberMe) {
-        localStorage.setItem('rememberedEmail', email);
-        localStorage.setItem('rememberMe', 'true');
-      } else {
-        // Ако rememberMe е false, изтриваме запазения имейл
-        localStorage.removeItem('rememberedEmail');
-        localStorage.removeItem('rememberMe');
-      }
-      
-      // Пренасочваме към съответния dashboard според ролята
-      if (response.user.role === DBUserRole.BUILDING_MANAGER) {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      // Пренасочваме към dashboard
+      navigate('/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
       

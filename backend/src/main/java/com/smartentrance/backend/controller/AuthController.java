@@ -1,18 +1,17 @@
 package com.smartentrance.backend.controller;
 
-import com.smartentrance.backend.dto.request.LoginRequest;
-import com.smartentrance.backend.dto.response.LoginResponse;
-import com.smartentrance.backend.dto.request.RegisterUserRequest;
-import com.smartentrance.backend.dto.response.UserResponse;
+import com.smartentrance.backend.dto.auth.LoginRequest;
+import com.smartentrance.backend.dto.auth.LoginResponse;
+import com.smartentrance.backend.dto.user.UserRegisterRequest;
+import com.smartentrance.backend.dto.user.UserResponse;
 import com.smartentrance.backend.security.JwtService;
 import com.smartentrance.backend.service.AuthenticationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 
 import java.net.URI;
 
@@ -25,7 +24,7 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterUserRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         LoginResponse loginResponse = authService.register(request);
 
         ResponseCookie cookie = jwtService.generateCookie(loginResponse.getToken(), request.isRememberMe());

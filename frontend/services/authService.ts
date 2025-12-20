@@ -1,5 +1,5 @@
 import { api } from '../config/api';
-import { UserRole, type User } from '../types/database';
+import type { User } from '../types/database';
 
 export interface LoginRequest {
   email: string;
@@ -12,21 +12,11 @@ export interface LoginResponse {
 }
 
 export interface RegisterRequest {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
-  role: UserRole;
-  unitNumber?: string;
-  buildingCode?: string;
-  buildingName?: string;
-  buildingAddress?: string;
-  totalUnits?: number;
-}
-
-export interface AuthResponse {
-  token?: string; // Токенът е в HTTP-only cookie, не в response body
-  user: User;
-  buildingCode?: string;
+  rememberMe?: boolean;
 }
 
 export const authService = {
@@ -45,26 +35,17 @@ export const authService = {
   },
 
   // Регистрация
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
+  register: async (data: RegisterRequest): Promise<User> => {
     // Регистрираме потребителя (JWT токенът се връща автоматично в HTTP-only cookie)
-    await api.post<User>('/auth/register', data);
+    await api.post('/auth/register', data);
     
     // След успешна регистрация, вземаме пълните user данни
     const user = await api.get<User>('/auth/me');
     
-    // Генерираме код за домоуправител (временно - докато backend не го върне)
-    let buildingCode: string | undefined = undefined;
-    if (user.role === UserRole.BUILDING_MANAGER) {
-      buildingCode = Math.floor(100000 + Math.random() * 900000).toString();
-    }
-    
     // Запази потребителя в sessionStorage за UI
     sessionStorage.setItem('currentUser', JSON.stringify(user));
     
-    return {
-      user: user,
-      buildingCode: buildingCode,
-    };
+    return user;
   },
 
   // Изход
@@ -119,12 +100,4 @@ export const authService = {
   updateCurrentUser: (user: User) => {
     sessionStorage.setItem('currentUser', JSON.stringify(user));
   },
-
-  // Вземи ролята на текущия потребител
-  getUserRole: (): UserRole | null => {
-    const user = authService.getCurrentUser();
-    return user?.role || null;
-  },
-
-  
 };

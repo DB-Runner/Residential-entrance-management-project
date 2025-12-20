@@ -1,9 +1,9 @@
-import { Building2, User, LogOut, ChevronDown } from 'lucide-react';
+import { Building2, User, LogOut, ChevronDown, MapPin, Home } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { UserRole } from '../types/database';
 import type { User as UserType } from '../types/database';
+import { useSelection } from '../contexts/SelectionContext';
 
 interface DashboardHeaderProps {
   onLogout: () => void;
@@ -15,6 +15,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
+  const { selectedBuilding, selectedUnit } = useSelection();
 
   useEffect(() => {
     // Зареди текущия потребител от backend
@@ -53,28 +54,57 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
     };
   }, [showProfileMenu]);
 
-  // Определи ролята на потребителя
-  const userRoleLabel = currentUser?.role === UserRole.BUILDING_MANAGER ? 'Домоуправител' : 'Жител';
-  const isBuildingManager = currentUser?.role === UserRole.BUILDING_MANAGER;
-
   const handleProfileClick = () => {
     setShowProfileMenu(false);
-    // Винаги пренасочваме към жителския профил
-    navigate('/dashboard/profile');
+    // Навигираме към правилния профил според режима
+    if (isAdmin) {
+      navigate('/admin/dashboard/profile');
+    } else {
+      navigate('/dashboard/profile');
+    }
   };
 
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="px-6 py-4 flex items-center justify-between">
         {/* Лого */}
-        <div className="flex items-center gap-2">
-          <Building2 className="w-8 h-8 text-blue-600" />
-          <div>
-            <span className="text-blue-600 block">Жилищни Входове</span>
-            <span className="text-gray-500 text-sm">
-              {isBuildingManager ? 'Панел за управление' : 'бул. Витоша 10, вх. А'}
-            </span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-8 h-8 text-blue-600" />
+            <div>
+              <span className="text-blue-600 block"><b>SmartEntrance</b></span>
+              <span className="text-gray-500 text-sm">
+                Панел за управление
+              </span>
+            </div>
           </div>
+          
+          {/* Информация за избрания вход/апартамент */}
+          {isAdmin && selectedBuilding && (
+            <>
+              <div className="h-8 w-px bg-gray-300"></div>
+              <div className="flex flex-col">
+                <span className="text-gray-900">{selectedBuilding.name}</span>
+                <div className="flex items-center gap-1 text-gray-500 text-sm">
+                  <MapPin className="w-3 h-3" />
+                  <span>{selectedBuilding.address}</span>
+                </div>
+              </div>
+            </>
+          )}
+          
+          {!isAdmin && selectedUnit && (
+            <>
+              <div className="h-8 w-px bg-gray-300"></div>
+              <div className="flex flex-col">
+                <span className="text-gray-900">Апартамент {selectedUnit.unitNumber}</span>
+                <div className="flex items-center gap-1 text-gray-500 text-sm">
+                  <Home className="w-3 h-3" />
+                  <span>{selectedUnit.buildingName}</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
         
         {/* Профил отдясно */}
@@ -90,10 +120,10 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
               </div>
               <div className="text-left hidden md:block">
                 <div className="text-gray-900">
-                  {currentUser?.fullName || 'Потребител'}
+                  {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Потребител'}
                 </div>
                 <div className="text-gray-500 text-sm">
-                  {userRoleLabel}
+                  {currentUser?.email}
                 </div>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-600" />
@@ -101,7 +131,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
             
             {/* Dropdown меню */}
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2">
+              <div className="absolute right-0 mt-6 w-56 bg-white rounded-lg shadow-lg border py-2">
                 <button 
                   onClick={handleProfileClick}
                   className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"

@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
-import { User, Mail, Shield, Calendar, Edit2, Save, X, MapPin, Building2, Home, LogOut } from 'lucide-react';
+import { User, Mail, Calendar, Edit2, Save, X, LogOut } from 'lucide-react';
 import { authService } from '../services/authService';
-import { UserRole } from '../types/database';
-import type { User as UserType } from '../types/database';
 import { useNavigate } from 'react-router-dom';
+import { useSelection } from '../contexts/SelectionContext';
+import type { User as UserType } from '../types/database';
 
 export function ProfilePage() {
   const navigate = useNavigate();
+  const { clearSelection } = useSelection();
   const [user, setUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState('');
+  const [editedFirstName, setEditedFirstName] = useState('');
+  const [editedLastName, setEditedLastName] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -23,7 +25,8 @@ export function ProfilePage() {
       setError('');
       const userData = await authService.me();
       setUser(userData);
-      setEditedName(userData.fullName);
+      setEditedFirstName(userData.firstName);
+      setEditedLastName(userData.lastName);
     } catch (err) {
       console.error('Error loading user data:', err);
       setError('Грешка при зареждане на профила');
@@ -34,41 +37,24 @@ export function ProfilePage() {
 
   const handleEditToggle = () => {
     if (isEditing) {
-      // Отказ - връщаме оригиналното име
-      setEditedName(user?.fullName || '');
+      // Отказ - връщаме оригиналните имена
+      setEditedFirstName(user?.firstName || '');
+      setEditedLastName(user?.lastName || '');
     }
     setIsEditing(!isEditing);
   };
 
-  {/*const handleSave = async () => {
-    try {
-      setError('');
-      // Актуализираме профила чрез backend API
-      const updatedUser = await authService.updateProfile({ fullName: editedName });
-      setUser(updatedUser);
-      setIsEditing(false);
-      alert('Профилът беше актуализиран успешно!');
-    } catch (err: any) {
-      console.error('Error updating profile:', err);
-      setError(err.message || 'Грешка при актуализиране на профила');
-      // Връщаме старото име при грешка
-      setEditedName(user?.fullName || '');
-    }
-  };*/}
-
   const handleLogout = async () => {
     try {
       await authService.logout();
+      clearSelection();
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
       // Дори при грешка, пренасочваме към началната страница
+      clearSelection();
       navigate('/');
     }
-  };
-
-  const getRoleName = (role: UserRole) => {
-    return role === UserRole.BUILDING_MANAGER ? 'Домоуправител' : 'Жител';
   };
 
   const formatDate = (dateString: string) => {
@@ -153,15 +139,24 @@ export function ProfilePage() {
             <div className="flex-1">
               <label className="block text-sm text-gray-600 mb-1">Пълно име</label>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Въведете пълно име"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editedFirstName}
+                    onChange={(e) => setEditedFirstName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Въведете първо име"
+                  />
+                  <input
+                    type="text"
+                    value={editedLastName}
+                    onChange={(e) => setEditedLastName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Въведете фамилия"
+                  />
+                </div>
               ) : (
-                <p className="text-gray-900">{user.fullName}</p>
+                <p className="text-gray-900">{user.firstName} {user.lastName}</p>
               )}
             </div>
           </div>
@@ -174,19 +169,6 @@ export function ProfilePage() {
             <div className="flex-1">
               <label className="block text-sm text-gray-600 mb-1">Имейл адрес</label>
               <p className="text-gray-900">{user.email}</p>
-            </div>
-          </div>
-
-          {/* Роля */}
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Shield className="w-6 h-6 text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm text-gray-600 mb-1">Роля</label>
-              <div className="flex items-center gap-2">
-                <p className="text-gray-900">{getRoleName(user.role)}</p>
-              </div>
             </div>
           </div>
 
@@ -212,45 +194,6 @@ export function ProfilePage() {
               <div className="flex-1">
                 <label className="block text-sm text-gray-600 mb-1">Последна актуализация</label>
                 <p className="text-gray-900">{formatDate(user.updatedAt)}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Номер на апартамент (за жители) */}
-          {user.role === UserRole.RESIDENT && user.unitNumber && (
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <Home className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm text-gray-600 mb-1">Номер на апартамент</label>
-                <p className="text-gray-900">{user.unitNumber}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Име на сграда (за домоуправители) */}
-          {user.role === UserRole.BUILDING_MANAGER && user.buildingName && (
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <Building2 className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm text-gray-600 mb-1">Име на сграда</label>
-                <p className="text-gray-900">{user.buildingName}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Адрес на сграда */}
-          {user.buildingAddress && (
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-teal-100 rounded-lg">
-                <MapPin className="w-6 h-6 text-teal-600" />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm text-gray-600 mb-1">Адрес на сграда</label>
-                <p className="text-gray-900">{user.buildingAddress}</p>
               </div>
             </div>
           )}
