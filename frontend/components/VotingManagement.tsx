@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Vote, Plus, Trash2, X, Calendar, CheckCircle, AlertCircle, Clock, Edit2, Filter } from 'lucide-react';
+import { Vote, Plus, Trash2, X, Calendar, CheckCircle, AlertCircle, Clock, Edit2 } from 'lucide-react';
 import { pollService, type CreatePollRequest, type UpdatePollRequest, type Poll, type PollType } from '../services/pollService';
 import { useSelection } from '../contexts/SelectionContext';
 import { toast } from 'sonner';
@@ -21,14 +21,36 @@ export function VotingManagement() {
     }
   }, [selectedBuilding, filterType]);
 
+  const getPollStatus = (poll: Poll) => {
+    const now = new Date();
+    const startDate = new Date(poll.startAt);
+    const endDate = new Date(poll.endAt);
+
+    if (poll.status === 'ENDED') return 'ended';
+    if (now < startDate) return 'upcoming';
+    if (now > endDate) return 'ended';
+    return 'active';
+  };
+
   const loadPolls = async () => {
     if (!selectedBuilding) return;
 
     try {
       setLoading(true);
       setError('');
-      const data = await pollService.getAllPolls(selectedBuilding.id, filterType);
-      setPolls(data);
+      
+      // За ACTIVE зареждаме всички и филтрираме PLANNED и ACTIVE статуси
+      if (filterType === 'ACTIVE') {
+        const data = await pollService.getAllPolls(selectedBuilding.id, 'ALL');
+        const activePolls = data.filter((poll) => 
+          poll.status === 'PLANNED' || poll.status === 'ACTIVE'
+        );
+        setPolls(activePolls);
+      } else {
+        // За ALL и HISTORY използваме директно бекенда
+        const data = await pollService.getAllPolls(selectedBuilding.id, filterType);
+        setPolls(data);
+      }
     } catch (err) {
       console.error('Error loading polls:', err);
       setError('Грешка при зареждане на гласуванията');
@@ -71,17 +93,6 @@ export function VotingManagement() {
       console.error('Error deleting poll:', err);
       toast.error('Грешка при изтриване на гласуването');
     }
-  };
-
-  const getPollStatus = (poll: Poll) => {
-    const now = new Date();
-    const startDate = new Date(poll.startAt);
-    const endDate = new Date(poll.endAt);
-
-    if (poll.status === 'ENDED') return 'ended';
-    if (now < startDate) return 'upcoming';
-    if (now > endDate) return 'ended';
-    return 'active';
   };
 
   const getStatusBadge = (status: string) => {

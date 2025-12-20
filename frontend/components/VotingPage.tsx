@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, Vote, Clock, TrendingUp, AlertCircle, Calendar, Filter, X } from 'lucide-react';
+import { CheckCircle, Vote, Clock, TrendingUp, AlertCircle, Calendar, X } from 'lucide-react';
 import { pollService, type Poll, type PollType } from '../services/pollService';
 import { useSelection } from '../contexts/SelectionContext';
 import { toast } from 'sonner';
@@ -19,6 +19,17 @@ export function VotingPage() {
     }
   }, [selectedUnit, filterType]);
 
+  const getPollStatus = (poll: Poll) => {
+    const now = new Date();
+    const startDate = new Date(poll.startAt);
+    const endDate = new Date(poll.endAt);
+
+    if (poll.status === 'ENDED') return 'ended';
+    if (now < startDate) return 'upcoming';
+    if (now > endDate) return 'ended';
+    return 'active';
+  };
+
   const loadPolls = async () => {
     if (!selectedUnit?.buildingId) {
       setPolls([]);
@@ -29,8 +40,19 @@ export function VotingPage() {
     try {
       setLoading(true);
       setError('');
-      const data = await pollService.getAllPolls(selectedUnit.buildingId, filterType);
-      setPolls(data);
+      
+      // За ACTIVE зареждаме всички и филтрираме PLANNED и ACTIVE статуси
+      if (filterType === 'ACTIVE') {
+        const data = await pollService.getAllPolls(selectedUnit.buildingId, 'ALL');
+        const activePolls = data.filter((poll) => 
+          poll.status === 'PLANNED' || poll.status === 'ACTIVE'
+        );
+        setPolls(activePolls);
+      } else {
+        // За ALL и HISTORY използваме директно бекенда
+        const data = await pollService.getAllPolls(selectedUnit.buildingId, filterType);
+        setPolls(data);
+      }
     } catch (err) {
       console.error('Error loading polls:', err);
       setError('Грешка при зареждане на гласуванията');
@@ -63,17 +85,6 @@ export function VotingPage() {
     } finally {
       setVotingPollId(null);
     }
-  };
-
-  const getPollStatus = (poll: Poll) => {
-    const now = new Date();
-    const startDate = new Date(poll.startAt);
-    const endDate = new Date(poll.endAt);
-
-    if (poll.status === 'ENDED') return 'ended';
-    if (now < startDate) return 'upcoming';
-    if (now > endDate) return 'ended';
-    return 'active';
   };
 
   const getStatusBadge = (status: string) => {
@@ -161,7 +172,7 @@ export function VotingPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Архив
+              Приключили
             </button>
           </div>
         </div>
@@ -182,7 +193,7 @@ export function VotingPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {polls.map((poll) => {
             const status = getPollStatus(poll);
             const hasVoted = poll.userVotedOptionId !== null;

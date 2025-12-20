@@ -47,12 +47,18 @@ export interface VoteResponse {
   votedAt: string;
 }
 
-export type PollType = 'ALL' | 'ACTIVE' | 'HISTORY';
+// Типове които поддържа backend API
+export type ApiPollType = 'ALL' | 'ACTIVE' | 'HISTORY';
+
+// Типове за frontend (включително UPCOMING който филтрираме на фронтенда)
+export type PollType = 'ALL' | 'ACTIVE' | 'UPCOMING' | 'HISTORY';
 
 class PollService {
   // Взимане на всички гласувания за сграда
   async getAllPolls(buildingId: number, type?: PollType): Promise<Poll[]> {
-    const params = type ? { type: type } : undefined;
+    // Мапваме UPCOMING към ALL понеже бекендът не го поддържа
+    const apiType: ApiPollType = type === 'UPCOMING' ? 'ALL' : (type as ApiPollType);
+    const params = apiType ? { type: apiType } : undefined;
     return await api.get<Poll[]>(`/buildings/${buildingId}/polls`, params);
   }
 
