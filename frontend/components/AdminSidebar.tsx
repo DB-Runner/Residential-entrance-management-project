@@ -8,7 +8,7 @@ interface AdminSidebarProps {
 }
 
 const menuItems = [
-  { id: 'homes' as AdminView, label: 'Начало', icon: Home },
+  { id: 'homes' as AdminView, label: 'Моите жилища', icon: Home },
   { id: 'overview' as AdminView, label: 'Преглед', icon: LayoutDashboard },
   { id: 'apartments' as AdminView, label: 'Апартаменти', icon: Users },
   { id: 'payments' as AdminView, label: 'Плащания', icon: Receipt },
@@ -21,16 +21,18 @@ export function AdminSidebar({ currentView, onViewChange }: AdminSidebarProps) {
   const { selectedBuilding } = useSelection();
 
   return (
-    <aside className="w-64 bg-white border-r fixed left-0 top-[85px] bottom-0 overflow-y-auto">
-      <nav className="p-4">
+    <aside className="w-64 bg-white border-r fixed left-0 top-[73px] bottom-0 overflow-y-auto">
+      <nav className="p-6">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
-            // Показва само "Моите жилища" ако няма избран вход
+            // Показва само "Моите жилища" ако няма избран вход (освен ако не сме на профил)
             const shouldShow = !selectedBuilding ? item.id === 'homes' : true;
+            // Ако currentView е 'profile', третираме го като че има избран вход
+            const isProfileView = currentView === 'profile';
             
-            if (!shouldShow) return null;
+            if (!shouldShow && !isProfileView) return null;
             
             return (
               <li key={item.id}>

@@ -13,7 +13,7 @@ export function HomesAndBuildings() {
   const [loading, setLoading] = useState(true);
   const [showCreateBuilding, setShowCreateBuilding] = useState(false);
   const [showJoinHome, setShowJoinHome] = useState(false);
-  const { selectBuilding, selectUnit } = useSelection();
+  const { selectBuilding, selectUnit, selectedBuilding, selectedUnit } = useSelection();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,6 +46,7 @@ export function HomesAndBuildings() {
 
   const handleUnitClick = (unit: any) => {
     selectUnit(unit);
+    // Когато избираме апартамент, винаги отиваме в житейския изглед (dashboard/overview)
     navigate('/dashboard/overview');
   };
 
@@ -77,27 +78,34 @@ export function HomesAndBuildings() {
 
         {data?.myHomes && data.myHomes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.myHomes.map((home) => (
-              <button
-                key={home.unitId}
-                onClick={() => handleUnitClick(home)}
-                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg hover:border-green-300 transition-all cursor-pointer text-left"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Home className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-gray-900 mb-1">Апартамент {home.unitNumber}</h3>
-                    <p className="text-gray-600 text-sm mb-1">{home.buildingName}</p>
-                    <div className="flex items-center gap-1 text-gray-500 text-sm">
-                      <MapPin className="w-4 h-4" />
-                      <span>{home.buildingAddress}</span>
+            {data.myHomes.map((home) => {
+              const isSelected = selectedUnit?.unitId === home.unitId;
+              return (
+                <button
+                  key={home.unitId}
+                  onClick={() => handleUnitClick(home)}
+                  className={`rounded-lg border p-4 hover:shadow-lg transition-all cursor-pointer text-left ${
+                    isSelected 
+                      ? 'bg-green-50 border-green-500 shadow-md ring-2 ring-green-200' 
+                      : 'bg-white border-gray-200 hover:border-green-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${isSelected ? 'bg-green-600' : 'bg-green-100'}`}>
+                      <Home className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-green-600'}`} />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-gray-900 mb-1">Апартамент {home.unitNumber}</h3>
+                      <p className="text-gray-600 text-sm mb-1">{home.buildingName}</p>
+                      <div className="flex items-center gap-1 text-gray-500 text-sm">
+                        <MapPin className="w-4 h-4" />
+                        <span>{home.buildingAddress}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         ) : (
           <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
@@ -128,30 +136,37 @@ export function HomesAndBuildings() {
 
         {data?.managedBuildings && data.managedBuildings.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.managedBuildings.map((building) => (
-              <button
-                key={building.id}
-                onClick={() => handleBuildingClick(building)}
-                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer text-left"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Building className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-gray-900 mb-1">{building.name}</h3>
-                    <div className="flex items-center gap-1 text-gray-600 text-sm mb-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>{building.address}</span>
+            {data.managedBuildings.map((building) => {
+              const isSelected = selectedBuilding?.id === building.id;
+              return (
+                <button
+                  key={building.id}
+                  onClick={() => handleBuildingClick(building)}
+                  className={`rounded-lg border p-4 hover:shadow-lg transition-all cursor-pointer text-left ${
+                    isSelected 
+                      ? 'bg-blue-50 border-blue-500 shadow-md ring-2 ring-blue-200' 
+                      : 'bg-white border-gray-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${isSelected ? 'bg-blue-600' : 'bg-blue-100'}`}>
+                      <Building className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-blue-600'}`} />
                     </div>
-                    <div className="flex items-center gap-1 text-gray-500 text-sm">
-                      <Users className="w-4 h-4" />
-                      <span>{building.totalUnits} апартамента</span>
+                    <div className="flex-1">
+                      <h3 className="text-gray-900 mb-1">{building.name}</h3>
+                      <div className="flex items-center gap-1 text-gray-600 text-sm mb-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>{building.address}{building.entrance ? `, вх. ${building.entrance}` : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-gray-500 text-sm">
+                        <Users className="w-4 h-4" />
+                        <span>{building.totalUnits} апартамента</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         ) : (
           <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
@@ -281,7 +296,7 @@ function CreateBuildingModal({
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-gray-900 mb-4">Създаване на нов вход</h2>
 
@@ -411,7 +426,7 @@ function JoinHomeModal({
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-gray-900 mb-4">Добавяне на жилище</h2>
 

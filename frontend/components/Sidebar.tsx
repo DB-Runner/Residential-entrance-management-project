@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, Vote, Calendar, User, Home } from 'lucide-react';
+import { LayoutDashboard, Receipt, Vote, Calendar, Home } from 'lucide-react';
 import { DashboardView } from '../types/views';
 import { useSelection } from '../contexts/SelectionContext';
 
@@ -8,19 +8,18 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: 'homes' as DashboardView, label: 'Начало', icon: Home },
+  { id: 'homes' as DashboardView, label: 'Моите жилища', icon: Home },
   { id: 'overview' as DashboardView, label: 'Преглед', icon: LayoutDashboard },
   { id: 'payments' as DashboardView, label: 'Плащания', icon: Receipt },
   { id: 'events' as DashboardView, label: 'Събития', icon: Calendar },
   { id: 'voting' as DashboardView, label: 'Гласувания', icon: Vote },
-  { id: 'profile' as DashboardView, label: 'Профил', icon: User },
 ];
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   const { selectedUnit } = useSelection();
 
   return (
-    <aside className="w-64 bg-white border-r fixed left-0 top-[85px] bottom-0 overflow-y-auto">
+    <aside className="w-64 bg-white border-r fixed left-0 top-[80px] bottom-0 overflow-y-auto">
       <nav className="p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => {

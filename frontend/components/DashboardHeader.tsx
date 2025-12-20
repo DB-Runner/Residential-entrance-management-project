@@ -56,8 +56,12 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
 
   const handleProfileClick = () => {
     setShowProfileMenu(false);
-    // Винаги пренасочваме към жителския профил
-    navigate('/dashboard/profile');
+    // Навигираме към правилния профил според режима
+    if (isAdmin) {
+      navigate('/admin/dashboard/profile');
+    } else {
+      navigate('/dashboard/profile');
+    }
   };
 
   return (
@@ -93,10 +97,10 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
             <>
               <div className="h-8 w-px bg-gray-300"></div>
               <div className="flex flex-col">
-                <span className="text-gray-900">Ап. {selectedUnit.unitNumber}</span>
+                <span className="text-gray-900">Апартамент {selectedUnit.unitNumber}</span>
                 <div className="flex items-center gap-1 text-gray-500 text-sm">
-                  <MapPin className="w-3 h-3" />
-                  <span>{selectedUnit.buildingAddress}, {selectedUnit.buildingName}</span>
+                  <Home className="w-3 h-3" />
+                  <span>{selectedUnit.buildingName}</span>
                 </div>
               </div>
             </>
@@ -127,7 +131,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
             
             {/* Dropdown меню */}
             {showProfileMenu && (
-              <div className="absolute right-0 mt-6 w-56 bg-white rounded-lg shadow-lg border py-2">
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-2">
                 <button 
                   onClick={handleProfileClick}
                   className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
