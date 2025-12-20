@@ -22,7 +22,7 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "unit_fee_id", nullable = false)
@@ -36,16 +36,19 @@ public class Payment {
     private User user;
 
     @Column(nullable = false)
-    @NotNull
-    @Positive
-    private BigDecimal amount;
+    private BigDecimal netAmount;
+
+    @Column(nullable = false)
+    private BigDecimal grossAmount;
+
+    @Column(nullable = false)
+    private BigDecimal feeAmount;
 
     @Column(name = "payment_date")
     private Instant paymentDate;
 
-    @Column(name = "bank_reference", nullable = false, unique = true)
-    @NotNull @NotBlank
-    private String bankReference;
+    @Column(name = "stripe_payment_intent_id", unique = true)
+    private String stripePaymentIntentId;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status = PaymentStatus.PENDING;
