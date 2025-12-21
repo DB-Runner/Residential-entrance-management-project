@@ -2,6 +2,7 @@ package com.smartentrance.backend.controller;
 
 import com.smartentrance.backend.dto.document.CreateDocumentRequest;
 import com.smartentrance.backend.dto.document.DocumentResponse;
+import com.smartentrance.backend.model.enums.DocumentType;
 import com.smartentrance.backend.security.UserPrincipal;
 import com.smartentrance.backend.service.BuildingDocumentService;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +22,9 @@ public class BuildingDocumentController {
     @GetMapping
     public ResponseEntity<List<DocumentResponse>> getDocuments(
             @PathVariable Integer buildingId,
+            @RequestParam(required = false) DocumentType type,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(documentService.getDocumentsForBuilding(buildingId, principal.user()));
+        return ResponseEntity.ok(documentService.getDocumentsForBuilding(buildingId, type, principal.user()));
     }
 
     @PostMapping

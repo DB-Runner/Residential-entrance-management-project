@@ -5,6 +5,7 @@ import com.smartentrance.backend.dto.document.DocumentResponse;
 import com.smartentrance.backend.model.Building;
 import com.smartentrance.backend.model.BuildingDocument;
 import com.smartentrance.backend.model.User;
+import com.smartentrance.backend.model.enums.DocumentType;
 import com.smartentrance.backend.repository.BuildingRepository;
 import com.smartentrance.backend.repository.DocumentRepository;
 import com.smartentrance.backend.security.BuildingSecurity;
@@ -25,14 +26,22 @@ public class BuildingDocumentService {
     private final BuildingSecurity buildingSecurity;
 
     @PreAuthorize("@buildingSecurity.hasAccess(#buildingId, principal.user)")
-    public List<DocumentResponse> getDocumentsForBuilding(Integer buildingId, User user) {
+    public List<DocumentResponse> getDocumentsForBuilding(Integer buildingId, DocumentType type, User user) {
         List<BuildingDocument> docs;
         boolean isManager = buildingSecurity.isManager(buildingId, user);
 
         if (isManager) {
-            docs = documentRepository.findAllByBuildingIdOrderByCreatedAtDesc(buildingId);
+            if (type != null) {
+                docs = documentRepository.findAllByBuildingIdAndTypeOrderByCreatedAtDesc(buildingId, type);
+            } else {
+                docs = documentRepository.findAllByBuildingIdOrderByCreatedAtDesc(buildingId);
+            }
         } else {
-            docs = documentRepository.findAllByBuildingIdAndIsVisibleToResidentsTrueOrderByCreatedAtDesc(buildingId);
+            if (type != null) {
+                docs = documentRepository.findAllByBuildingIdAndTypeAndIsVisibleToResidentsTrueOrderByCreatedAtDesc(buildingId, type);
+            } else {
+                docs = documentRepository.findAllByBuildingIdAndIsVisibleToResidentsTrueOrderByCreatedAtDesc(buildingId);
+            }
         }
 
         return docs.stream().map(this::mapToResponse).toList();
