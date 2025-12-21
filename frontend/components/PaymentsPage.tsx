@@ -1,64 +1,104 @@
-import { Receipt, CheckCircle, AlertCircle, Clock, TrendingUp, DollarSign } from 'lucide-react';
+import { Receipt, CheckCircle, AlertCircle, Clock, TrendingUp, DollarSign, Download } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { paymentService } from '../services/paymentService';
-import type { UnitFeeWithDetails } from '../types/database';
-import { FundType } from '../types/database';
+import { useSelection } from '../contexts/SelectionContext';
+import type { Transaction } from '../types/database';
+import { FundType, TransactionStatus } from '../types/database';
 
 export function PaymentsPage() {
   const navigate = useNavigate();
-  const [fees, setFees] = useState<UnitFeeWithDetails[]>([]);
+  const { selectedUnit } = useSelection();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [balance, setBalance] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'paid'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
 
   useEffect(() => {
-    loadFees();
-  }, []);
+    if (selectedUnit) {
+      loadData();
+    }
+  }, [selectedUnit]);
 
-  const loadFees = async () => {
+  const loadData = async () => {
+    if (!selectedUnit) return;
+    
     try {
       setLoading(true);
-      const data = await paymentService.getMyFees();
-      setFees(data);
+      const [txData, balanceData] = await Promise.all([
+        paymentService.getUnitTransactions(selectedUnit.unitId),
+        paymentService.getUnitBalance(selectedUnit.unitId)
+      ]);
+      setTransactions(txData);
+      setBalance(balanceData);
     } catch (err) {
-      console.error('Error loading fees:', err);
+      console.error('Error loading payment data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatus = (fee: UnitFeeWithDetails) => {
-    if (fee.isPaid) return 'paid';
-    const dueDate = new Date(fee.dueTo);
-    const now = new Date();
-    return dueDate < now ? 'overdue' : 'pending';
-  };
-
   const getFundName = (fundType: FundType) => {
-    return fundType === FundType.MAINTENANCE ? 'Фонд Поддръжка' : 'Фонд Ремонти';
+    if (fundType === FundType.MAINTENANCE || fundType === FundType.GENERAL) {
+      return 'Фонд Поддръжка';
+    }
+    return 'Фонд Ремонти';
   };
 
-  const handlePayClick = (fee: UnitFeeWithDetails) => {
-    navigate('/payment/checkout', { state: { fee } });
+  const handlePayClick = () => {
+    navigate('/payment/checkout');
   };
 
-  const filteredFees = fees.filter(fee => {
+  const handleDownloadReceipt = async (transactionId: number) => {
+    try {
+      const details = await paymentService.getReceiptDetails(transactionId);
+      if (details.documentUrl) {
+        window.open(details.documentUrl, '_blank');
+      }
+    } catch (err) {
+      console.error('Error downloading receipt:', err);
+    }
+  };
+
+  const filteredTransactions = transactions.filter(tx => {
     if (filter === 'all') return true;
-    if (filter === 'pending') return !fee.isPaid;
-    if (filter === 'paid') return fee.isPaid;
+    if (filter === 'pending') return tx.transactionStatus === TransactionStatus.PENDING;
+    if (filter === 'confirmed') return tx.transactionStatus === TransactionStatus.CONFIRMED;
     return true;
   });
 
   // Статистики
-  const totalPending = fees.filter(f => !f.isPaid).reduce((sum, f) => sum + f.amount, 0);
-  const totalPaid = fees.filter(f => f.isPaid).reduce((sum, f) => sum + f.amount, 0);
-  const pendingCount = fees.filter(f => !f.isPaid).length;
+  const payments = transactions.filter(tx => tx.type === 'PAYMENT');
+  const fees = transactions.filter(tx => tx.type === 'FEE');
+  
+  const totalPaid = payments
+    .filter(p => p.transactionStatus === TransactionStatus.CONFIRMED)
+    .reduce((sum, p) => sum + p.amount, 0);
+    
+  const totalFees = fees.reduce((sum, f) => sum + f.amount, 0);
+  const pendingPayments = payments.filter(p => p.transactionStatus === TransactionStatus.PENDING).length;
 
   // Групиране по фонд
-  const maintenanceFees = fees.filter(f => f.fundType === FundType.MAINTENANCE);
-  const repairFees = fees.filter(f => f.fundType === FundType.REPAIR);
-  const maintenancePending = maintenanceFees.filter(f => !f.isPaid).reduce((sum, f) => sum + f.amount, 0);
-  const repairPending = repairFees.filter(f => !f.isPaid).reduce((sum, f) => sum + f.amount, 0);
+  const maintenanceTransactions = transactions.filter(
+    t => t.fundType === FundType.MAINTENANCE || t.fundType === FundType.GENERAL
+  );
+  const repairTransactions = transactions.filter(t => t.fundType === FundType.REPAIR);
+  
+  const maintenancePaid = maintenanceTransactions
+    .filter(t => t.type === 'PAYMENT' && t.transactionStatus === TransactionStatus.CONFIRMED)
+    .reduce((sum, t) => sum + t.amount, 0);
+    
+  const repairPaid = repairTransactions
+    .filter(t => t.type === 'PAYMENT' && t.transactionStatus === TransactionStatus.CONFIRMED)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  if (!selectedUnit) {
+    return (
+      <div className="p-6">
+        <p className="text-gray-600 text-center">Моля, изберете апартамент за да видите плащания</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -75,17 +115,19 @@ export function PaymentsPage() {
         <p className="text-gray-600">Преглед на всички такси и плащания</p>
       </div>
 
-      {/* Статистики */}
+      {/* Статистик�� */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-orange-100 text-orange-600">
-              <AlertCircle className="w-6 h-6" />
+            <div className="p-3 rounded-lg bg-blue-100 text-blue-600">
+              <DollarSign className="w-6 h-6" />
             </div>
           </div>
-          <div className="text-gray-900 mb-1">{totalPending.toFixed(2)} лв</div>
-          <div className="text-gray-600 text-sm mb-1">За плащане</div>
-          <div className="text-gray-500 text-xs">{pendingCount} неплатени</div>
+          <div className="text-gray-900 mb-1">{balance.toFixed(2)} лв</div>
+          <div className="text-gray-600 text-sm mb-1">Текущ баланс</div>
+          <div className="text-gray-500 text-xs">
+            {balance < 0 ? 'Дължима сума' : 'Преплатена сума'}
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
@@ -95,64 +137,37 @@ export function PaymentsPage() {
             </div>
           </div>
           <div className="text-gray-900 mb-1">{totalPaid.toFixed(2)} лв</div>
-          <div className="text-gray-600 text-sm mb-1">Платени</div>
-          <div className="text-gray-500 text-xs">{fees.filter(f => f.isPaid).length} плащания</div>
+          <div className="text-gray-600 text-sm mb-1">Потвърдени плащания</div>
+          <div className="text-gray-500 text-xs">
+            {payments.filter(p => p.transactionStatus === TransactionStatus.CONFIRMED).length} плащания
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-blue-100 text-blue-600">
-              <TrendingUp className="w-6 h-6" />
+            <div className="p-3 rounded-lg bg-orange-100 text-orange-600">
+              <Clock className="w-6 h-6" />
             </div>
           </div>
-          <div className="text-gray-900 mb-1">{(totalPending + totalPaid).toFixed(2)} лв</div>
-          <div className="text-gray-600 text-sm mb-1">Обща сума</div>
-          <div className="text-gray-500 text-xs">{fees.length} такси</div>
+          <div className="text-gray-900 mb-1">{pendingPayments}</div>
+          <div className="text-gray-600 text-sm mb-1">Чакащи одобрение</div>
+          <div className="text-gray-500 text-xs">Плащания</div>
         </div>
       </div>
 
-      {/* Статистики по фондове */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <DollarSign className="w-5 h-5 text-blue-600" />
-            </div>
-            <h3 className="text-gray-900">Фонд Поддръжка</h3>
+      {/* Бутон за плащане */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-gray-900 mb-1">Извърши плащане</h3>
+            <p className="text-gray-600 text-sm">Платете дължими такси или направете депозит</p>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600 text-sm">За плащане:</span>
-              <span className="text-orange-600">{maintenancePending.toFixed(2)} лв</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 text-sm">Платени:</span>
-              <span className="text-green-600">
-                {maintenanceFees.filter(f => f.isPaid).reduce((sum, f) => sum + f.amount, 0).toFixed(2)} лв
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <DollarSign className="w-5 h-5 text-purple-600" />
-            </div>
-            <h3 className="text-gray-900">Фонд Ремонти</h3>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600 text-sm">За плащане:</span>
-              <span className="text-orange-600">{repairPending.toFixed(2)} лв</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 text-sm">Платени:</span>
-              <span className="text-green-600">
-                {repairFees.filter(f => f.isPaid).reduce((sum, f) => sum + f.amount, 0).toFixed(2)} лв
-              </span>
-            </div>
-          </div>
+          <button
+            onClick={handlePayClick}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Плати сега
+          </button>
         </div>
       </div>
 
@@ -177,80 +192,95 @@ export function PaymentsPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Неплатени
+            Чакащи
           </button>
           <button
-            onClick={() => setFilter('paid')}
+            onClick={() => setFilter('confirmed')}
             className={`px-4 py-2 rounded-lg transition-colors ${
-              filter === 'paid'
+              filter === 'confirmed'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Платени
+            Потвърдени
           </button>
         </div>
       </div>
 
-      {/* Списък с плащания */}
+      {/* Списък с транзакции */}
       <div className="bg-white rounded-lg shadow">
         <div className="divide-y">
-          {filteredFees.length === 0 ? (
+          {filteredTransactions.length === 0 ? (
             <div className="p-6 text-center text-gray-600">
-              Няма налични плащания
+              Няма налични транзакции
             </div>
           ) : (
-            filteredFees.map((fee) => {
-              const status = getStatus(fee);
+            filteredTransactions.map((tx) => {
+              const isPayment = tx.type === 'PAYMENT';
+              const isConfirmed = tx.transactionStatus === TransactionStatus.CONFIRMED;
+              const isPending = tx.transactionStatus === TransactionStatus.PENDING;
+              const isRejected = tx.transactionStatus === TransactionStatus.REJECTED;
+
               return (
-                <div key={fee.id} className="p-5 hover:bg-gray-50 transition-colors">
+                <div key={tx.id} className="p-5 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-gray-900">
-                          {getFundName(fee.fundType)} - {new Date(fee.month).toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' })}
+                          {isPayment ? 'Плащане' : 'Такса - ' + getFundName(tx.fundType)}
                         </h3>
-                        {status === 'paid' && (
+                        {isConfirmed && (
                           <CheckCircle className="w-5 h-5 text-green-500" />
                         )}
-                        {status === 'overdue' && (
-                          <AlertCircle className="w-5 h-5 text-red-500" />
-                        )}
-                        {status === 'pending' && (
+                        {isPending && (
                           <Clock className="w-5 h-5 text-orange-500" />
+                        )}
+                        {isRejected && (
+                          <AlertCircle className="w-5 h-5 text-red-500" />
                         )}
                       </div>
                       <p className="text-gray-600 text-sm mb-2">
-                        {fee.fundType === FundType.MAINTENANCE ? 'Месечна такса за поддръжка' : 'Месечна такса за ремонти'}
+                        {tx.description || (isPayment ? 'Плащане по сметка' : 'Месечна такса')}
                       </p>
                       <div className="flex items-center gap-4 text-sm">
-                        {status === 'paid' ? (
-                          <span className="text-green-600">
-                            Платено
-                          </span>
-                        ) : status === 'overdue' ? (
-                          <span className="text-red-600">
-                            Просрочено от {new Date(fee.dueTo).toLocaleDateString('bg-BG')}
-                          </span>
-                        ) : (
-                          <span className="text-gray-600">
-                            Падеж: {new Date(fee.dueTo).toLocaleDateString('bg-BG')}
+                        <span className="text-gray-600">
+                          {new Date(tx.createdAt).toLocaleDateString('bg-BG', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </span>
+                        <span className={`${
+                          isConfirmed ? 'text-green-600' :
+                          isPending ? 'text-orange-600' :
+                          'text-red-600'
+                        }`}>
+                          {isConfirmed ? 'Потвърдено' :
+                           isPending ? 'Чака одобрение' :
+                           'Отхвърлено'}
+                        </span>
+                        {tx.paymentMethod && tx.paymentMethod !== 'SYSTEM' && (
+                          <span className="text-gray-500">
+                            {tx.paymentMethod === 'STRIPE' ? 'Карта' :
+                             tx.paymentMethod === 'CASH' ? 'Кеш' :
+                             tx.paymentMethod === 'BANK' ? 'Банка' : tx.paymentMethod}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className={`text-2xl mb-2 ${
-                        status === 'paid' ? 'text-gray-600' : 'text-gray-900'
+                        isPayment ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {fee.amount.toFixed(2)} лв
+                        {isPayment ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)} лв
                       </div>
-                      {status !== 'paid' && (
+                      {tx.documentUrl && isConfirmed && (
                         <button
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                          onClick={() => handlePayClick(fee)}
+                          onClick={() => handleDownloadReceipt(tx.id)}
+                          className="flex items-center gap-2 px-3 py-1 text-sm text-blue-600 hover:text-blue-700"
                         >
-                          Плати
+                          <Download className="w-4 h-4" />
+                          Разписка
                         </button>
                       )}
                     </div>

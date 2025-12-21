@@ -102,7 +102,7 @@ export const unitService = {
   // Получи всички апартаменти за конкретна сграда
   getAllByBuilding: async (buildingId: number): Promise<UnitResponseFromAPI[]> => {
     try {
-      return await api.get<UnitResponseFromAPI[]>(`/units/buildings/${buildingId}/units`);
+      return await api.get<UnitResponseFromAPI[]>(`/units/buildings/${buildingId}`);
     } catch (error) {
       console.error('Error fetching units for building:', error);
       return [];
@@ -123,7 +123,7 @@ export const unitService = {
   // Редактирай апартамент (от домоуправител)
   update: async (id: number, data: UpdateUnitRequest): Promise<UnitResponseFromAPI> => {
     try {
-      return await api.put<UnitResponseFromAPI>(`/units/units/${id}`, data);
+      return await api.put<UnitResponseFromAPI>(`/units/${id}`, data);
     } catch (error) {
       throw new Error('Апартаментът не може да бъде редактиран в момента');
     }
@@ -132,7 +132,7 @@ export const unitService = {
   // Потвърди апартамент (verify)
   verify: async (id: number): Promise<void> => {
     try {
-      await api.patch(`/units/units/${id}/verify`, {});
+      await api.patch(`/units/${id}/verify`, {});
     } catch (error) {
       throw new Error('Грешка при потвърждаване на апартамент');
     }
