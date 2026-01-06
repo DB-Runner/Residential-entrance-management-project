@@ -282,17 +282,28 @@ function CreateBuildingModal({
         return;
       }
 
-      const response = await buildingService.create(formData);
+      // Конвертираме буквата на входа към главна преди да изпратим
+      const dataToSubmit = {
+        ...formData,
+        entrance: formData.entrance.toUpperCase(),
+      };
+
+      const response = await buildingService.create(dataToSubmit);
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Грешка при създаване на вход');
+      // Проверяваме за 409 грешка (вход вече съществува)
+      if (err.message?.includes('409') || err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('съществува')) {
+        setError('Вход с този адрес вече съществува в системата.');
+      } else {
+        setError(err.message || 'Грешка при създаване на вход');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-gray-900 mb-4">Създаване на нов вход</h2>
 
@@ -418,6 +429,11 @@ function JoinHomeModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Проверка дали всички полета са попълнени правилно
+  const isFormValid = formData.accessCode.length === 8 && 
+                      formData.residentsCount >= 1 && 
+                      formData.area > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -427,14 +443,21 @@ function JoinHomeModal({
       await unitService.join(formData);
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Грешка при присъединяване към жилище');
+      // Проверка за грешка при невалиден код
+      if (err.message?.includes('404') || err.message?.toLowerCase().includes('not found') || err.message?.toLowerCase().includes('invalid')) {
+        setError('Кодът за достъп е невалиден или не съществува.');
+      } else if (err.message?.toLowerCase().includes('already')) {
+        setError('Вече сте присъединени към това жилище.');
+      } else {
+        setError(err.message || 'Грешка при присъединяване към жилище');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-gray-900 mb-4">Добавяне на жилище</h2>
 
@@ -496,7 +519,7 @@ function JoinHomeModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isFormValid}
               className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               {loading ? 'Добавяне...' : 'Добави'}

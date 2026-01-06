@@ -132,7 +132,7 @@ export function PaymentsPage() {
               <DollarSign className="w-6 h-6" />
             </div>
           </div>
-          <div className="text-gray-900 mb-1">{balance.toFixed(2)} лв</div>
+          <div className="text-gray-900 mb-1">{balance.toFixed(2)} EUR</div>
           <div className="text-gray-600 text-sm mb-1">Текущ баланс</div>
           <div className="text-gray-500 text-xs">
             {balance < 0 ? 'Дължима сума' : 'Преплатена сума'}
@@ -145,7 +145,7 @@ export function PaymentsPage() {
               <CheckCircle className="w-6 h-6" />
             </div>
           </div>
-          <div className="text-gray-900 mb-1">{totalPaid.toFixed(2)} лв</div>
+          <div className="text-gray-900 mb-1">{totalPaid.toFixed(2)} EUR</div>
           <div className="text-gray-600 text-sm mb-1">Потвърдени плащания</div>
           <div className="text-gray-500 text-xs">
             {payments.filter(p => p.transactionStatus === TransactionStatus.CONFIRMED).length} плащания
@@ -161,39 +161,6 @@ export function PaymentsPage() {
           <div className="text-gray-900 mb-1">{pendingPayments}</div>
           <div className="text-gray-600 text-sm mb-1">Чакащи одобрение</div>
           <div className="text-gray-500 text-xs">Плащания</div>
-        </div>
-      </div>
-
-      {/* Статистики по фондове */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <DollarSign className="w-5 h-5 text-blue-600" />
-            </div>
-            <h3 className="text-gray-900">Фонд Поддръжка</h3>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600 text-sm">Платени:</span>
-              <span className="text-green-600">{maintenancePaid.toFixed(2)} лв</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <DollarSign className="w-5 h-5 text-purple-600" />
-            </div>
-            <h3 className="text-gray-900">Фонд Ремонти</h3>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600 text-sm">Платени:</span>
-              <span className="text-green-600">{repairPaid.toFixed(2)} лв</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -333,7 +300,7 @@ export function PaymentsPage() {
                       <div className={`text-2xl mb-2 ${
                         isPayment ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {isPayment ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)} лв
+                        {isPayment ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)} EUR
                       </div>
                       {/* Показваме документ за банкови плащания (pending с externalDocumentUrl) или разписка за потвърдени (documentUrl) */}
                       {showDocument && (

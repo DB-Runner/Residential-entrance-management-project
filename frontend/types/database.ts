@@ -31,6 +31,13 @@ export enum FundType {
   GENERAL = 'GENERAL'            // Общ фонд (алиас за MAINTENANCE)
 }
 
+export enum DocumentType {
+  PROTOCOL = 'PROTOCOL',
+  INVOICE = 'INVOICE',
+  CONTRACT = 'CONTRACT',
+  OTHER = 'OTHER'
+}
+
 export interface User {
   id: number;
   firstName: string;
@@ -266,4 +273,16 @@ export interface BankPaymentRequest {
   amount: number;
   transactionReference: string;
   proofUrl: string;
+}
+
+// Document (from API)
+export interface Document {
+  id: number;
+  title: string;
+  description: string;
+  type: DocumentType;
+  fileUrl: string;
+  uploaderName: string;
+  isVisible: boolean;
+  createdAt: string;
 }

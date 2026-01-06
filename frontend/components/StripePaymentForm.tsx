@@ -105,7 +105,7 @@ function CheckoutForm({
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
         <p className="text-blue-800 text-sm flex items-center gap-2">
           <Lock className="w-4 h-4" />
-          Плащане на {amount.toFixed(2)} лв чрез Stripe
+          Плащане на {amount.toFixed(2)} EUR чрез Stripe
         </p>
       </div>
 
@@ -143,7 +143,7 @@ function CheckoutForm({
           ) : (
             <>
               <Lock className="w-5 h-5" />
-              Платете {amount.toFixed(2)} лв
+              Платете {amount.toFixed(2)} EUR
             </>
           )}
         </button>

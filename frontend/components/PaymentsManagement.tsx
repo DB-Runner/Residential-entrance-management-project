@@ -8,10 +8,21 @@ import {
   TransactionType,
   TransactionStatus,
   FundType,
+  PaymentMethod,
 } from "../types/database";
 import type { BudgetData } from "../services/buildingService";
 import type { UnitResponseFromAPI } from "../services/unitService";
-import { Banknote, CheckCircle, Clock, DollarSign, Download, Save, XCircle, Zap } from "lucide-react";
+import { 
+  CheckCircle, 
+  Clock, 
+  XCircle, 
+  Download, 
+  DollarSign, 
+  Save, 
+  Zap, 
+  Banknote,
+  FileText 
+} from 'lucide-react';
 
 export function PaymentsManagement() {
   const { selectedBuilding } = useSelection();
@@ -365,10 +376,7 @@ export function PaymentsManagement() {
               <DollarSign className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-gray-900">Месечен бюджет</h3>
-              <p className="text-sm text-gray-600">
-                Настройки за автоматично генериране на такси
-              </p>
+              <h3 className="text-blue-700">Месечен бюджет</h3>
             </div>
           </div>
           {!showBudgetForm && (
@@ -386,7 +394,7 @@ export function PaymentsManagement() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-gray-700 text-sm mb-2">
-                  Фонд Поддръжка (лв/м²)
+                  Фонд Поддръжка (EUR)
                 </label>
                 <input
                   type="number"
@@ -404,7 +412,7 @@ export function PaymentsManagement() {
               </div>
               <div>
                 <label className="block text-gray-700 text-sm mb-2">
-                  Фонд Ремонти (лв/м²)
+                  Фонд Ремонти (EUR)
                 </label>
                 <input
                   type="number"
@@ -464,7 +472,7 @@ export function PaymentsManagement() {
               </div>
               <div className="text-blue-600">
                 {(budget?.maintenanceBudget ?? 0).toFixed(2)}{" "}
-                лв/м²
+                EUR
               </div>
             </div>
             <div>
@@ -472,14 +480,14 @@ export function PaymentsManagement() {
                 Фонд Ремонти
               </div>
               <div className="text-purple-600">
-                {(budget?.repairBudget ?? 0).toFixed(2)} лв/м²
+                {(budget?.repairBudget ?? 0).toFixed(2)} EUR
               </div>
             </div>
-            <div>
+            <div className="flex items-end">
               <button
                 onClick={handleTriggerFees}
                 disabled={triggeringFees}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-400 text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-300 transition-colors disabled:bg-gray-400 text-sm w-full"
               >
                 {triggeringFees ? (
                   <>
@@ -489,18 +497,13 @@ export function PaymentsManagement() {
                 ) : (
                   <>
                     <Zap className="w-4 h-4" />
-                    Генерирай такси (Debug)
+                    Debug: Генерирай такси
                   </>
                 )}
               </button>
             </div>
           </div>
         )}
-
-        <p className="text-xs text-gray-500 mt-3">
-          💡 Месечните такси се изчисляват автоматично според
-          квадратурата на всеки апартамент
-        </p>
       </div>
 
       {/* Статистики */}
@@ -516,7 +519,7 @@ export function PaymentsManagement() {
             {confirmedPayments.length} плащания
           </div>
           <div className="text-green-600">
-            {totalConfirmed.toFixed(2)} лв
+            {totalConfirmed.toFixed(2)} EUR
           </div>
         </div>
 
@@ -533,7 +536,7 @@ export function PaymentsManagement() {
             {pendingPayments.length} плащания
           </div>
           <div className="text-orange-600">
-            {totalPending.toFixed(2)} лв
+            {totalPending.toFixed(2)} EUR
           </div>
         </div>
 
@@ -548,7 +551,7 @@ export function PaymentsManagement() {
             {rejectedPayments.length} плащания
           </div>
           <div className="text-red-600">
-            {totalRejected.toFixed(2)} лв
+            {totalRejected.toFixed(2)} EUR
           </div>
         </div>
       </div>
@@ -679,7 +682,18 @@ export function PaymentsManagement() {
                   const isPending =
                     tx.transactionStatus ===
                     TransactionStatus.PENDING;
+                  const isConfirmed = 
+                    tx.transactionStatus ===
+                    TransactionStatus.CONFIRMED;
                   const isPayment = tx.type === "PAYMENT";
+                  const isBankPayment = 
+                    tx.paymentMethod === PaymentMethod.BANK_TRANSFER || 
+                    tx.paymentMethod === PaymentMethod.BANK;
+                  
+                  // Показваме платежно нареждане за pending банкови плащания
+                  const showProofDocument = isPending && isBankPayment && tx.externalDocumentUrl;
+                  // Показваме разписка за потвърдени плащания
+                  const showReceiptDocument = isConfirmed && tx.documentUrl;
 
                   return (
                     <tr
@@ -711,7 +725,7 @@ export function PaymentsManagement() {
                           ? "Карта"
                           : tx.paymentMethod === "CASH"
                             ? "Кеш"
-                            : tx.paymentMethod === "BANK"
+                            : tx.paymentMethod === "BANK" || tx.paymentMethod === "BANK_TRANSFER"
                               ? "Банка"
                               : "Система"}
                       </td>
@@ -724,7 +738,7 @@ export function PaymentsManagement() {
                           }
                         >
                           {isPayment ? "+" : "-"}
-                          {Math.abs(tx.amount).toFixed(2)} лв
+                          {Math.abs(tx.amount).toFixed(2)} EUR
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -748,36 +762,53 @@ export function PaymentsManagement() {
                         })}
                       </td>
                       <td className="px-6 py-4">
-                        {isPending && isPayment && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() =>
-                                handleApprove(tx.id)
-                              }
-                              className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                        <div className="flex flex-col gap-2">
+                          {/* Бутони за одобрение/отхвърляне */}
+                          {isPending && isPayment && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() =>
+                                  handleApprove(tx.id)
+                                }
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                              >
+                                Одобри
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleReject(tx.id)
+                                }
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                              >
+                                Отхвърли
+                              </button>
+                            </div>
+                          )}
+                          {/* Платежно нареждане за pending банкови плащания */}
+                          {showProofDocument && (
+                            <a
+                              href={tx.externalDocumentUrl!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
                             >
-                              Одобри
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleReject(tx.id)
-                              }
-                              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                              <FileText className="w-4 h-4" />
+                              Платежно нареждане
+                            </a>
+                          )}
+                          {/* Разписка за потвърдени плащания */}
+                          {showReceiptDocument && (
+                            <a
+                              href={tx.documentUrl!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
                             >
-                              Отхвърли
-                            </button>
-                          </div>
-                        )}
-                        {tx.documentUrl && (
-                          <a
-                            href={tx.documentUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700 text-sm"
-                          >
-                            Документ
-                          </a>
-                        )}
+                              <FileText className="w-4 h-4" />
+                              Разписка
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -790,11 +821,15 @@ export function PaymentsManagement() {
 
       {/* Модал за кеш плащане */}
       <div
-        className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center ${
+        className={`fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[100] ${
           showCashPaymentModal ? "block" : "hidden"
         }`}
+        onClick={() => setShowCashPaymentModal(false)}
       >
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl">
+        <div 
+          className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl relative z-10"
+          onClick={(e) => e.stopPropagation()}
+        >
           <h2 className="text-gray-900 text-xl font-bold mb-4">
             Добавяне на кеш плащане
           </h2>
@@ -825,7 +860,7 @@ export function PaymentsManagement() {
               </div>
               <div>
                 <label className="block text-gray-700 text-sm mb-2">
-                  Сума (лв)
+                  Сума (EUR)
                 </label>
                 <input
                   type="number"
@@ -896,6 +931,7 @@ export function PaymentsManagement() {
                 )}
               </button>
               <button
+                type="button"
                 onClick={() => setShowCashPaymentModal(false)}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >

@@ -59,7 +59,7 @@ export function PaymentsPanel({ expanded = false }: PaymentsPanelProps) {
           </div>
           <div>
             <h3 className="text-gray-900">Плащания</h3>
-            <p className="text-sm text-gray-600">Баланс: {balance.toFixed(2)} лв</p>
+            <p className="text-sm text-gray-600">Баланс: {balance.toFixed(2)} EUR</p>
           </div>
         </div>
         <button 
@@ -112,7 +112,7 @@ export function PaymentsPanel({ expanded = false }: PaymentsPanelProps) {
                     </p>
                   </div>
                   <span className={`${isPayment ? 'text-green-600' : 'text-red-600'}`}>
-                    {isPayment ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)} лв
+                    {isPayment ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)} EUR
                   </span>
                 </div>
                 {/* Бутон за документ */}

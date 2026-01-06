@@ -192,13 +192,13 @@ export function PaymentCheckout() {
             <ArrowLeft className="w-5 h-5" />
             Назад към плащания
           </button>
-          <h1 className="text-gray-900 mb-2">Извърши плащане</h1>
+          <h1 className="text-gray-900 mb-2">Добавяне на средства</h1>
           <p className="text-gray-600">Изберете метод на плащане и въведете сума</p>
         </div>
 
         {/* Stripe Form Overlay */}
         {showStripeForm && stripeClientSecret && (
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
             <div className="min-h-screen flex items-center justify-center p-4 py-8">
               <Elements stripe={stripePromise} options={{ clientSecret: stripeClientSecret }}>
                 <StripePaymentForm
@@ -225,7 +225,7 @@ export function PaymentCheckout() {
                   <label className="block text-gray-700 mb-3">
                     Метод на плащане *
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('stripe')}
@@ -239,21 +239,6 @@ export function PaymentCheckout() {
                         paymentMethod === 'stripe' ? 'text-blue-600' : 'text-gray-400'
                       }`} />
                       <p className="text-sm text-gray-700">Карта</p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('cash')}
-                      className={`p-4 border-2 rounded-lg transition-all ${
-                        paymentMethod === 'cash'
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <Banknote className={`w-6 h-6 mx-auto mb-2 ${
-                        paymentMethod === 'cash' ? 'text-blue-600' : 'text-gray-400'
-                      }`} />
-                      <p className="text-sm text-gray-700">Кеш</p>
                     </button>
 
                     <button
@@ -288,7 +273,7 @@ export function PaymentCheckout() {
                       placeholder="0.00"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">лв</span>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">EUR</span>
                   </div>
                 </div>
 
@@ -315,24 +300,6 @@ export function PaymentCheckout() {
                     <p className="text-blue-800 text-sm">
                       <Lock className="w-4 h-4 inline mr-1" />
                       След натискане на бутона ще бъдете пренасочени към защитена страница за въвеждане на данни на картата
-                    </p>
-                  </div>
-                )}
-
-                {paymentMethod === 'cash' && (
-                  <div>
-                    <label className="block text-gray-700 mb-2">
-                      Бележка *
-                    </label>
-                    <textarea
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="Добавете бележка за плащането (напр. 'Платено на каса')"
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Плащането ще чака одобрение от мениджъра на входа
                     </p>
                   </div>
                 )}
@@ -441,19 +408,9 @@ export function PaymentCheckout() {
                 <div className="flex justify-between text-gray-600">
                   <span>Метод:</span>
                   <span>
-                    {paymentMethod === 'stripe' ? 'Карта' :
-                     paymentMethod === 'cash' ? 'Кеш' :
-                     'Банков превод'}
+                    {paymentMethod === 'stripe' ? 'Карта' : 'Банков превод'}
                   </span>
                 </div>
-                {(paymentMethod === 'cash' || paymentMethod === 'bank') && (
-                  <div className="flex justify-between text-gray-600">
-                    <span>Фонд:</span>
-                    <span className="text-sm text-right">
-                      {fundType === FundType.REPAIR ? 'Ремонти' : 'Подръжка'}
-                    </span>
-                  </div>
-                )}
                 {paymentMethod === 'bank' && bankProofFile && (
                   <div className="flex flex-col gap-1 pt-2 border-t">
                     <span className="text-gray-600 text-sm">Платежно нареждане:</span>
@@ -468,7 +425,7 @@ export function PaymentCheckout() {
               <div className="flex justify-between items-center mb-6">
                 <span className="text-gray-900">Сума:</span>
                 <span className="text-blue-600">
-                  {amount ? parseFloat(amount).toFixed(2) : '0.00'} лв
+                  {amount ? parseFloat(amount).toFixed(2) : '0.00'} EUR
                 </span>
               </div>
 

@@ -1,5 +1,5 @@
 import { api } from '../config/api';
-import type { Transaction, TransactionType, TransactionStatus } from '../types/database';
+import type { Transaction, TransactionType, TransactionStatus, Document } from '../types/database';
 
 export interface CreateBuildingRequest {
   address: string;
@@ -115,6 +115,11 @@ class BuildingService {
 
   async createExpense(buildingId: number, data: CreateExpenseRequest): Promise<void> {
     await api.post<void>(`/buildings/${buildingId}/finance/expenses`, data);
+  }
+
+  // Document operations
+  async getDocuments(buildingId: number): Promise<Document[]> {
+    return await api.get<Document[]>(`/buildings/${buildingId}/documents`);
   }
 
   // Debug - Force trigger monthly fees
