@@ -86,7 +86,7 @@ public class PollService {
     }
 
     @Transactional(readOnly = true)
-    @PreAuthorize("@buildingSecurity.hasAccessByPollId(#pollId, principal.user)") // TODO: FIX
+    @PreAuthorize("@buildingSecurity.hasAccessByPollId(#pollId, principal.user)")
     public PollResponse getPollById(Integer pollId, User currentUser) {
         VotesPoll poll = pollRepository.findById(pollId)
                 .orElseThrow(() -> new EntityNotFoundException("Poll not found"));
