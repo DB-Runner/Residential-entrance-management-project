@@ -47,6 +47,11 @@ export function CashPaymentModal({
       return;
     }
 
+    if (!form.note.trim()) {
+      alert("Моля, въведете описание");
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onSubmit({
@@ -142,14 +147,15 @@ export function CashPaymentModal({
 
             <div>
               <label className="block text-gray-700 mb-2">
-                Бележка (опционално)
+                Описание <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={form.note}
                 onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Допълнителна информация..."
+                placeholder="Кратко описание..."
+                required
               />
             </div>
           </div>

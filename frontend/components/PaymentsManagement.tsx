@@ -751,10 +751,10 @@ export function PaymentsManagement() {
                                   href={item.externalDocumentUrl!}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-600 text-white text-xs rounded-lg hover:bg-gray-700 transition-colors font-medium"
                                 >
                                   <ExternalLink className="w-3 h-3" />
-                                  Stripe receipt
+                                  Stripe
                                 </a>
                               )}
                             </div>
