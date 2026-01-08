@@ -9,9 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Table(name = "votes_options")
 @Data
@@ -23,18 +20,14 @@ public class VotesOption {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "option_text", nullable = false)
-    @NotNull @NotBlank
-    private String optionText;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "poll_id", nullable = false)
+    @NotNull
     @JsonIgnore
     @ToString.Exclude
     private VotesPoll poll;
 
-    @OneToMany(mappedBy = "option", cascade = CascadeType.ALL)
-    @JsonIgnore
-    @ToString.Exclude
-    private List<UserVote> votes = new ArrayList<>();
+    @Column(name = "option_text", nullable = false)
+    @NotNull @NotBlank
+    private String optionText;
 }

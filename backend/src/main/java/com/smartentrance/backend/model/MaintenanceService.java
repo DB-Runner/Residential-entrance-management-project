@@ -1,26 +1,23 @@
 package com.smartentrance.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "buildings", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"name", "address"})
-})
+@Table(name = "maintenance_services")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Building {
+public class MaintenanceService {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,12 +29,18 @@ public class Building {
 
     @Column(nullable = false)
     @NotNull @NotBlank
-    private String address;
+    private String provider;
 
-    @OneToMany(mappedBy = "building", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    @ToString.Exclude
-    private List<Unit> units = new ArrayList<>();
+    @Column(name = "monthly_cost", nullable = false)
+    @Positive
+    private BigDecimal monthlyCost;
+
+    @Column(name = "start_date", nullable = false)
+    @NotNull
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -48,10 +51,18 @@ public class Building {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        validateDates();
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+        validateDates();
+    }
+
+    private void validateDates() {
+        if (endDate != null && endDate.isBefore(startDate)) {
+            throw new IllegalStateException("End date cannot be before start date for maintenance service.");
+        }
     }
 }

@@ -1,9 +1,9 @@
 package com.smartentrance.backend.service;
 
-import com.smartentrance.backend.dto.auth.LoginRequest;
-import com.smartentrance.backend.dto.auth.LoginResponse;
-import com.smartentrance.backend.dto.user.UserRegisterRequest;
-import com.smartentrance.backend.dto.user.UserResponse;
+import com.smartentrance.backend.dto.request.LoginRequest;
+import com.smartentrance.backend.dto.response.LoginResponse;
+import com.smartentrance.backend.dto.request.RegisterUserRequest;
+import com.smartentrance.backend.dto.response.UserResponse;
 import com.smartentrance.backend.mapper.UserMapper;
 import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.security.JwtService;
@@ -15,7 +15,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,16 +23,12 @@ public class AuthenticationService {
 
     private final UserService userService;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
-    private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final AuthenticationManager authenticationManager;
 
-    public LoginResponse register(UserRegisterRequest request) {
-        User user = userMapper.toEntity(request);
-
-        user.setHashedPassword(passwordEncoder.encode(request.getPassword()));
-
-        User savedUser = userService.saveUser(user);
+    public LoginResponse register(RegisterUserRequest request) {
+        User userDraft = userMapper.toEntity(request);
+        User savedUser = userService.createUser(userDraft);
 
         String token = jwtService.generateToken(new UserPrincipal(savedUser), request.isRememberMe());
 
@@ -62,11 +57,11 @@ public class AuthenticationService {
         }
 
         try {
-            Long userId = principal.user().getId();
+            Integer userId = principal.user().getId();
             User user = userService.getUserById(userId);
             return userMapper.toResponse(user);
         } catch (EntityNotFoundException e) {
-            throw new BadCredentialsException("User session invalid");
+            throw new BadCredentialsException("User session invalid (user deleted)");
         }
     }
 }

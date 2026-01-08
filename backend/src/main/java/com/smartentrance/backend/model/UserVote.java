@@ -1,17 +1,17 @@
 package com.smartentrance.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_votes", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"poll_id", "unit_id"})
+        @UniqueConstraint(columnNames = {"poll_id", "user_id"})
 })
 @Data
 @NoArgsConstructor
@@ -22,36 +22,29 @@ public class UserVote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "poll_id", nullable = false)
-    @JsonIgnore
+    @NotNull
     @ToString.Exclude
     private VotesPoll poll;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "option_id", nullable = false)
-    @JsonIgnore
-    @ToString.Exclude
-    private VotesOption option;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
+    @NotNull
     @ToString.Exclude
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "unit_id", nullable = false)
-    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "option_id", nullable = false)
+    @NotNull
     @ToString.Exclude
-    private Unit unit;
+    private VotesOption option;
 
-
-    @Column(name = "voted_at", nullable = false)
-    private Instant votedAt;
+    @Column(name = "voted_at", nullable = false, updatable = false)
+    private LocalDateTime votedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.votedAt = Instant.now();
+        this.votedAt = LocalDateTime.now();
     }
 }

@@ -1,37 +1,30 @@
 package com.smartentrance.backend.mapper;
 
-import com.smartentrance.backend.dto.user.UserRegisterRequest;
-import com.smartentrance.backend.dto.user.UserResponse;
+import com.smartentrance.backend.dto.request.RegisterUserRequest;
+import com.smartentrance.backend.dto.response.UserResponse;
 import com.smartentrance.backend.model.User;
-import com.smartentrance.backend.model.enums.UserRole;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
-    public UserResponse toResponse(User user) {
-        if (user == null) {
-            return null;
-        }
 
-        UserResponse response = new UserResponse();
-        response.setId(user.getId());
-        response.setFirstName(user.getFirstName());
-        response.setLastName(user.getLastName());
-        response.setEmail(user.getEmail());
+    public User toEntity(RegisterUserRequest request) {
+        User user = new User();
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
+        user.setRole(request.getRole());
 
-        return response;
+        return user;
     }
 
-    public User toEntity(UserRegisterRequest request) {
-        if (request == null) {
-            return null;
-        }
+    public UserResponse toResponse(User user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setFullName(user.getFullName());
+        response.setEmail(user.getEmail());
+        response.setRole(user.getRole());
 
-        return User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .role(UserRole.USER)
-                .build();
+        return response;
     }
 }

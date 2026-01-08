@@ -1,11 +1,10 @@
 package com.smartentrance.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.smartentrance.backend.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,44 +12,43 @@ import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "units", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"building_id", "unit_number"})
-})
+@Table(name = "payments")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Unit {
+public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "building_id", nullable = false)
+    @JoinColumn(name = "unit_fee_id", nullable = false)
     @NotNull
     @ToString.Exclude
-    private Building building;
+    private UnitFee unitFee;
 
-    @Column(name = "unit_number", nullable = false)
-    @NotNull @NotBlank
-    private String unitNumber;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @ToString.Exclude
+    private User user;
 
     @Column(nullable = false)
-    @NotNull @Positive
-    private BigDecimal area;
+    @NotNull
+    @Positive
+    private BigDecimal amount;
 
-    @Column(name = "resident_count", nullable = false)
-    @NotNull @PositiveOrZero
-    private Integer residents;
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
 
-    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    @ToString.Exclude
-    private List<UnitFee> fees = new ArrayList<>();
+    @Column(name = "bank_reference", nullable = false, unique = true)
+    @NotNull @NotBlank
+    private String bankReference;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status = PaymentStatus.PENDING;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -62,6 +60,10 @@ public class Unit {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+
+        if (this.paymentDate == null) {
+            this.paymentDate = LocalDateTime.now();
+        }
     }
 
     @PreUpdate

@@ -1,10 +1,7 @@
 package com.smartentrance.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,45 +9,47 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "units", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"building_id", "unit_number"})
+@Table(name = "unit_fees", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"unit_id", "month"})
 })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Unit {
+public class UnitFee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "building_id", nullable = false)
+    @JoinColumn(name = "unit_id", nullable = false)
     @NotNull
     @ToString.Exclude
-    private Building building;
-
-    @Column(name = "unit_number", nullable = false)
-    @NotNull @NotBlank
-    private String unitNumber;
+    private Unit unit;
 
     @Column(nullable = false)
-    @NotNull @Positive
-    private BigDecimal area;
+    @NotNull
+    private LocalDate month;
 
-    @Column(name = "resident_count", nullable = false)
-    @NotNull @PositiveOrZero
-    private Integer residents;
+    @Column(nullable = false)
+    @PositiveOrZero
+    @NotNull
+    private BigDecimal amount;
 
-    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    @ToString.Exclude
-    private List<UnitFee> fees = new ArrayList<>();
+    @Column(name = "due_from", nullable = false)
+    @NotNull
+    private LocalDate dueFrom;
+
+    @Column(name = "due_to", nullable = false)
+    @NotNull
+    private LocalDate dueTo;
+
+    @Column(name = "is_paid", nullable = false)
+    private boolean isPaid = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -60,12 +59,20 @@ public class Unit {
 
     @PrePersist
     protected void onCreate() {
+        validateDates();
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
+        validateDates();
         this.updatedAt = LocalDateTime.now();
+    }
+
+    private void validateDates() {
+        if (dueTo.isBefore(dueFrom)) {
+            throw new IllegalStateException("Due date cannot be before start date!");
+        }
     }
 }
