@@ -35,13 +35,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden pt-[73px]">
       <DashboardHeader onLogout={onLogout} isAdmin />
       
       <div className="flex">
         <AdminSidebar currentView={currentView} onViewChange={handleViewChange} />
         
-        <main className="flex-1 p-6 ml-64">
+        <main className="flex-1 p-6 ml-64 overflow-x-hidden">
           {currentView === 'homes' && <HomesAndBuildings />}
           {currentView === 'overview' && <AdminOverview />}
           {currentView === 'apartments' && <ApartmentsManagement />}

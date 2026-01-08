@@ -1,10 +1,14 @@
 package com.smartentrance.backend.security;
 
 import com.smartentrance.backend.model.Building;
+import com.smartentrance.backend.model.BuildingDocument;
+import com.smartentrance.backend.model.Transaction;
 import com.smartentrance.backend.model.User;
 import com.smartentrance.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component("buildingSecurity")
 @RequiredArgsConstructor
@@ -15,6 +19,7 @@ public class BuildingSecurity {
     private final NoticeRepository noticeRepository;
     private final VotesPollRepository pollRepository;
     private final TransactionRepository transactionRepository;
+    private final DocumentRepository documentRepository;
 
     public boolean canManageUnit(Long unitId, User user) {
         return unitRepository.findById(unitId)
@@ -29,6 +34,19 @@ public class BuildingSecurity {
 
     public boolean isManager(Integer buildingId, User user) {
         return buildingRepository.existsByIdAndManagerId(buildingId, user.getId());
+    }
+
+    public boolean canManageDocument(Long documentId, User user) {
+        return documentRepository.findById(documentId)
+                .map(doc -> isManager(doc.getBuilding().getId(), user))
+                .orElse(false);
+    }
+
+    public boolean isUnitResponsible(Long unitId, User user) {
+        return unitRepository.findById(unitId)
+                .map(unit -> unit.getResponsibleUser() != null &&
+                        unit.getResponsibleUser().getId().equals(user.getId()))
+                .orElse(false);
     }
 
     public boolean canManageNotice(Integer noticeId, User user) {
@@ -84,4 +102,9 @@ public class BuildingSecurity {
                 .map(poll -> hasAccess(poll.getBuilding().getId(), user))
                 .orElse(false);
     }
+
+    public boolean isManagerByBuildingId(Integer buildingId, User user) {
+        return buildingRepository.existsByIdAndManagerId(buildingId, user.getId());
+    }
+
 }

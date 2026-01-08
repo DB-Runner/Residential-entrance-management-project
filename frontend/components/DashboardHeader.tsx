@@ -65,7 +65,7 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
   };
 
   return (
-    <header className="bg-white border-b sticky top-0 z-50">
+    <header className="bg-white border-b fixed top-0 left-0 right-0 z-50">
       <div className="px-6 py-4 flex items-center justify-between">
         {/* Лого */}
         <div className="flex items-center gap-4">
@@ -82,12 +82,12 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
           {/* Информация за избрания вход/апартамент */}
           {isAdmin && selectedBuilding && (
             <>
-              <div className="h-8 w-px bg-gray-300"></div>
+              <div className="ml-9 h-8 w-px bg-gray-300"></div>
               <div className="flex flex-col">
                 <span className="text-gray-900">{selectedBuilding.name}</span>
                 <div className="flex items-center gap-1 text-gray-500 text-sm">
                   <MapPin className="w-3 h-3" />
-                  <span>{selectedBuilding.address}</span>
+                  <span>{selectedBuilding.address}, Вход: {selectedBuilding.entrance}</span>
                 </div>
               </div>
             </>
@@ -95,12 +95,12 @@ export function DashboardHeader({ onLogout, isAdmin = false }: DashboardHeaderPr
           
           {!isAdmin && selectedUnit && (
             <>
-              <div className="h-8 w-px bg-gray-300"></div>
+              <div className="ml-9 h-8 w-px bg-gray-300"></div>
               <div className="flex flex-col">
                 <span className="text-gray-900">Апартамент {selectedUnit.unitNumber}</span>
                 <div className="flex items-center gap-1 text-gray-500 text-sm">
                   <Home className="w-3 h-3" />
-                  <span>{selectedUnit.buildingName}</span>
+                  <span>{selectedUnit.buildingAddress}, {selectedUnit.buildingName}</span>
                 </div>
               </div>
             </>

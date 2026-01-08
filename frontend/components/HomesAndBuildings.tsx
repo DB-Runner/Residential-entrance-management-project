@@ -220,11 +220,13 @@ function CreateBuildingModal({
     entrance: '',
     totalUnits: 1,
     googlePlaceId: '',
+    iban: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [isAddressFromGoogle, setIsAddressFromGoogle] = useState(false);
+  const [addressComponents, setAddressComponents] = useState<google.maps.GeocoderAddressComponent[]>([]);
 
   const onAutocompleteLoad = (autocomplete: google.maps.places.Autocomplete) => {
     autocompleteRef.current = autocomplete;
@@ -240,37 +242,17 @@ function CreateBuildingModal({
       return;
     }
 
-    const components = place.address_components;
-
-    const hasStreet = components.some(c =>
-      c.types.includes('route')
-    );
-
-    const hasStreetNumber = components.some(c =>
-      c.types.includes('street_number')
-    );
-
-    const hasNeighborhood = components.some(c =>
-      c.types.includes('neighborhood') ||
-      c.types.includes('sublocality')
-    );
-
-    // ❌ задължително улица + номер
-    if (!hasStreet || !hasStreetNumber) {
-      setError('Моля, въведете точен адрес с улица и номер (блок).');
-      setIsAddressFromGoogle(false);
-      return;
-    }
-
+    // Изчистваме грешката когато избират адрес
     setError('');
-
+    
+    // Задаваме адреса от Google
     setFormData(prev => ({
       ...prev,
       address: place.formatted_address!,
       googlePlaceId: place.place_id!,
     }));
-
     setIsAddressFromGoogle(true);
+    setAddressComponents(place.address_components);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -279,24 +261,49 @@ function CreateBuildingModal({
     setLoading(true);
 
     try {
-
       if (!isAddressFromGoogle) {
         setError('Моля, изберете адрес от списъка на Google.');
         setLoading(false);
         return;
       }
 
-      const response = await buildingService.create(formData);
+      // Валидация за улица и номер
+      const hasStreet = addressComponents.some(c =>
+        c.types.includes('route')
+      );
+
+      const hasStreetNumber = addressComponents.some(c =>
+        c.types.includes('street_number')
+      );
+
+      if (!hasStreet || !hasStreetNumber) {
+        setError('Моля, изберете адрес с улица и номер. Общи адреси като квартали или региони не са разрешени.');
+        setLoading(false);
+        return;
+      }
+
+      // Конвертираме буквата на входа към главна преди да изпратим
+      const dataToSubmit = {
+        ...formData,
+        entrance: formData.entrance.toUpperCase(),
+      };
+
+      const response = await buildingService.create(dataToSubmit);
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Грешка при създаване на вход');
+      // Проверяваме за 409 грешка (вход вече съществува)
+      if (err.message?.includes('409') || err.message?.toLowerCase().includes('already exists') || err.message?.toLowerCase().includes('съществува')) {
+        setError('Вход с този адрес вече съществува в системата.');
+      } else {
+        setError(err.message || 'Грешка при създаване на вход');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-gray-900 mb-4">Създаване на нов вход</h2>
 
@@ -366,6 +373,18 @@ function CreateBuildingModal({
             />
           </div>
 
+          <div>
+            <label className="block text-gray-700 mb-1">IBAN</label>
+            <input
+              type="text"
+              required
+              value={formData.iban}
+              onChange={(e) => setFormData({ ...formData, iban: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              placeholder="BG80BNBG966110203456789"
+            />
+          </div>
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
               {error}
@@ -410,6 +429,11 @@ function JoinHomeModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Проверка дали всички полета са попълнени правилно
+  const isFormValid = formData.accessCode.length === 8 && 
+                      formData.residentsCount >= 1 && 
+                      formData.area > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -417,16 +441,32 @@ function JoinHomeModal({
 
     try {
       await unitService.join(formData);
+      // Reset form only on success
+      setFormData({
+        accessCode: '',
+        residentsCount: 1,
+        area: 0,
+      });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Грешка при присъединяване към жилище');
+      // Проверка за грешка при невалиден код - НЕ затваряме модала
+      if (err.message?.includes('404') || err.message?.toLowerCase().includes('not found') || err.message?.toLowerCase().includes('invalid')) {
+        setError('Кодът за достъп е невалиден или не съществува.');
+      } else if (err.message?.toLowerCase().includes('already') || err.message?.includes('409')) {
+        setError('Вече сте присъединени към това жилище.');
+      } else {
+        setError(err.message || 'Грешка при присъединяване към жилище');
+      }
+      setLoading(false);
+      // НЕ извикваме onSuccess() когато има грешка
+      return;
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-gray-900 mb-4">Добавяне на жилище</h2>
 
@@ -488,7 +528,7 @@ function JoinHomeModal({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isFormValid}
               className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               {loading ? 'Добавяне...' : 'Добави'}

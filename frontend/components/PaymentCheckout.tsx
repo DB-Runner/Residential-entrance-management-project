@@ -1,152 +1,183 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { CreditCard, Lock, ArrowLeft, Calendar, User } from 'lucide-react';
-import type { UnitFeeWithDetails } from '../types/database';
+import { useNavigate } from 'react-router-dom';
+import { CreditCard, Lock, ArrowLeft, Banknote, Building2, Upload, FileText, X } from 'lucide-react';
+import { paymentService } from '../services/paymentService';
+import { useSelection } from '../contexts/SelectionContext';
+import { FundType } from '../types/database';
+import { StripePaymentForm } from './StripePaymentForm';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+
+const stripePromise = loadStripe(import.meta.env?.VITE_STRIPE_PUBLISHABLE_KEY || '');
+
+type PaymentMethod = 'stripe' | 'cash' | 'bank';
 
 export function PaymentCheckout() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const fee = location.state?.fee as UnitFeeWithDetails | undefined;
-
-  const [formData, setFormData] = useState({
-    cardNumber: '',
-    cardHolder: '',
-    expiryDate: '',
-    cvv: ''
-  });
-
-  const [errors, setErrors] = useState({
-    cardNumber: '',
-    cardHolder: '',
-    expiryDate: '',
-    cvv: ''
-  });
-
+  const { selectedUnit } = useSelection();
+  
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('stripe');
+  const [amount, setAmount] = useState('');
+  const [fundType, setFundType] = useState<FundType>(FundType.GENERAL);
+  const [note, setNote] = useState('');
+  const [bankReference, setBankReference] = useState('');
+  const [bankProofFile, setBankProofFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  const [showStripeForm, setShowStripeForm] = useState(false);
 
-  // Ако няма fee данни, връщаме към dashboard
-  if (!fee) {
+  if (!selectedUnit) {
     navigate('/dashboard/payments');
     return null;
   }
 
-  const formatCardNumber = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    const groups = digits.match(/.{1,4}/g);
-    return groups ? groups.join(' ') : digits;
+  const handleStripePayment = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Моля, въведете валидна сума');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError('');
+
+    try {
+      // Създаване на Stripe Payment Intent
+      const { clientSecret } = await paymentService.createStripePayment(
+        selectedUnit.unitId,
+        parseFloat(amount)
+      );
+
+      setStripeClientSecret(clientSecret);
+      setShowStripeForm(true);
+      setIsProcessing(false);
+      
+    } catch (err: any) {
+      setError(err.message || 'Грешка при създаване на плащане');
+      setIsProcessing(false);
+    }
   };
 
-  const formatExpiryDate = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length >= 2) {
-      return digits.slice(0, 2) + '/' + digits.slice(2, 4);
-    }
-    return digits;
+  const handleStripeSuccess = () => {
+    alert('Плащането е успешно обработено! ✓');
+    navigate('/dashboard/payments');
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    let formattedValue = value;
-
-    if (field === 'cardNumber') {
-      formattedValue = formatCardNumber(value);
-      if (formattedValue.replace(/\s/g, '').length > 16) return;
-    }
-
-    if (field === 'expiryDate') {
-      formattedValue = formatExpiryDate(value);
-      if (formattedValue.replace(/\D/g, '').length > 4) return;
-    }
-
-    if (field === 'cvv') {
-      formattedValue = value.replace(/\D/g, '');
-      if (formattedValue.length > 3) return;
-    }
-
-    setFormData(prev => ({ ...prev, [field]: formattedValue }));
-    setErrors(prev => ({ ...prev, [field]: '' }));
+  const handleStripeCancel = () => {
+    setShowStripeForm(false);
+    setStripeClientSecret(null);
+    setIsProcessing(false);
   };
 
-  const validateForm = () => {
-    const newErrors = {
-      cardNumber: '',
-      cardHolder: '',
-      expiryDate: '',
-      cvv: ''
-    };
-
-    let isValid = true;
-
-    // Валидация на номер на картата
-    const cardDigits = formData.cardNumber.replace(/\s/g, '');
-    if (!cardDigits) {
-      newErrors.cardNumber = 'Моля, въведете номер на картата';
-      isValid = false;
-    } else if (cardDigits.length !== 16) {
-      newErrors.cardNumber = 'Номерът трябва да съдържа 16 цифри';
-      isValid = false;
+  const handleCashPayment = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Моля, въведете валидна сума');
+      return;
     }
 
-    // Валидация на име на картодържателя
-    if (!formData.cardHolder.trim()) {
-      newErrors.cardHolder = 'Моля, въведете име на картодържателя';
-      isValid = false;
-    } else if (formData.cardHolder.trim().length < 3) {
-      newErrors.cardHolder = 'Името трябва да съдържа поне 3 символа';
-      isValid = false;
+    if (!note.trim()) {
+      setError('Моля, добавете бележка за плащането');
+      return;
     }
 
-    // Валидация на срок на валидност
-    const expiryDigits = formData.expiryDate.replace(/\D/g, '');
-    if (!expiryDigits) {
-      newErrors.expiryDate = 'Моля, въведете срок на валидност';
-      isValid = false;
-    } else if (expiryDigits.length !== 4) {
-      newErrors.expiryDate = 'Формат: MM/YY';
-      isValid = false;
-    } else {
-      const month = parseInt(expiryDigits.slice(0, 2));
-      const year = parseInt('20' + expiryDigits.slice(2, 4));
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
+    setIsProcessing(true);
+    setError('');
 
-      if (month < 1 || month > 12) {
-        newErrors.expiryDate = 'Невалиден месец';
-        isValid = false;
-      } else if (year < currentYear || (year === currentYear && month < currentMonth)) {
-        newErrors.expiryDate = 'Картата е изтекла';
-        isValid = false;
+    try {
+      await paymentService.createCashPayment(selectedUnit.unitId, {
+        amount: parseFloat(amount),
+        fundType,
+        note
+      });
+
+      setIsProcessing(false);
+      alert('Кеш плащането е регистрирано и чака одобрение от мениджъра');
+      navigate('/dashboard/payments');
+      
+    } catch (err: any) {
+      setError(err.message || 'Грешка при регистриране на плащане');
+      setIsProcessing(false);
+    }
+  };
+
+  const handleBankPayment = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Моля, въведете валидна сума');
+      return;
+    }
+
+    if (!bankProofFile) {
+      setError('Моля, качете PDF файл с платежното нареждане');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError('');
+
+    try {
+      console.log('Creating bank payment with file:', bankProofFile.name);
+      
+      // Метод 1: Опитваме да изпратим файла директно към /units/${unitId}/payments/bank
+      try {
+        await paymentService.createBankPaymentWithFile(
+          selectedUnit.unitId,
+          parseFloat(amount),
+          bankReference,
+          bankProofFile
+        );
+        console.log('Bank payment created successfully (direct file upload)');
+      } catch (directError: any) {
+        console.warn('Direct file upload failed, trying two-step approach:', directError);
+        
+        // Метод 2: Ако не работи, качваме файла първо и после изпращаме URL-a
+        const proofUrl = await paymentService.uploadPaymentProof(bankProofFile);
+        console.log('Proof file uploaded successfully. URL:', proofUrl);
+        
+        await paymentService.createBankPayment(selectedUnit.unitId, {
+          amount: parseFloat(amount),
+          transactionReference: bankReference,
+          proofUrl: proofUrl
+        });
+        console.log('Bank payment created successfully (two-step approach)');
       }
-    }
 
-    // Валидация на CVV
-    if (!formData.cvv) {
-      newErrors.cvv = 'Моля, въведете CVV код';
-      isValid = false;
-    } else if (formData.cvv.length !== 3) {
-      newErrors.cvv = 'CVV трябва да съдържа 3 цифри';
-      isValid = false;
+      setIsProcessing(false);
+      alert('Банковото плащане е регистрирано и чака одобрение от мениджъра');
+      navigate('/dashboard/payments');
+      
+    } catch (err: any) {
+      console.error('Error creating bank payment:', err);
+      setError(err.message || 'Грешка при регистриране на плащане');
+      setIsProcessing(false);
     }
+  };
 
-    setErrors(newErrors);
-    return isValid;
+  const handleBankProofFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      // Проверка дали файлът е PDF
+      if (file.type !== 'application/pdf') {
+        setError('Моля, изберете само PDF файл');
+        e.target.value = ''; // Изчистваме избора
+        return;
+      }
+      
+      setBankProofFile(file);
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
+    if (paymentMethod === 'stripe') {
+      await handleStripePayment();
+    } else if (paymentMethod === 'cash') {
+      await handleCashPayment();
+    } else if (paymentMethod === 'bank') {
+      await handleBankPayment();
     }
-
-    setIsProcessing(true);
-
-    // Симулация на плащане (тук ще се добави интеграция с backend)
-    setTimeout(() => {
-      setIsProcessing(false);
-      alert('Плащането е успешно! (Демо режим)');
-      navigate('/dashboard/payments');
-    }, 2000);
   };
 
   return (
@@ -161,118 +192,163 @@ export function PaymentCheckout() {
             <ArrowLeft className="w-5 h-5" />
             Назад към плащания
           </button>
-          <h1 className="text-gray-900 mb-2">Плащане на такса</h1>
-          <p className="text-gray-600">Попълнете данните за вашата карта</p>
+          <h1 className="text-gray-900 mb-2">Добавяне на средства</h1>
+          <p className="text-gray-600">Изберете метод на плащане и въведете сума</p>
         </div>
+
+        {/* Stripe Form Overlay */}
+        {showStripeForm && stripeClientSecret && (
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 overflow-y-auto">
+            <div className="min-h-screen flex items-center justify-center p-4 py-8">
+              <Elements stripe={stripePromise} options={{ clientSecret: stripeClientSecret }}>
+                <StripePaymentForm
+                  clientSecret={stripeClientSecret}
+                  amount={parseFloat(amount)}
+                  unitId={selectedUnit.unitId}
+                  onSuccess={handleStripeSuccess}
+                  onCancel={handleStripeCancel}
+                />
+              </Elements>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Форма за плащане */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <CreditCard className="w-6 h-6 text-blue-600" />
-                </div>
-                <h2 className="text-gray-900">Данни на картата</h2>
-              </div>
+              <h2 className="text-gray-900 mb-6">Детайли на плащането</h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Номер на картата */}
+                {/* Метод на плащане */}
+                <div>
+                  <label className="block text-gray-700 mb-3">
+                    Метод на плащане *
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('stripe')}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        paymentMethod === 'stripe'
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <CreditCard className={`w-6 h-6 mx-auto mb-2 ${
+                        paymentMethod === 'stripe' ? 'text-blue-600' : 'text-gray-400'
+                      }`} />
+                      <p className="text-sm text-gray-700">Карта</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('bank')}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        paymentMethod === 'bank'
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <Building2 className={`w-6 h-6 mx-auto mb-2 ${
+                        paymentMethod === 'bank' ? 'text-blue-600' : 'text-gray-400'
+                      }`} />
+                      <p className="text-sm text-gray-700">Банка</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Сума */}
                 <div>
                   <label className="block text-gray-700 mb-2">
-                    Номер на картата *
+                    Сума *
                   </label>
                   <div className="relative">
                     <input
-                      type="text"
-                      value={formData.cardNumber}
-                      onChange={(e) => handleInputChange('cardNumber', e.target.value)}
-                      placeholder="1234 5678 9012 3456"
-                      className={`w-full px-4 py-3 pl-12 border rounded-lg focus:outline-none focus:ring-2 ${
-                        errors.cardNumber
-                          ? 'border-red-500 focus:ring-red-500'
-                          : 'border-gray-300 focus:ring-blue-500'
-                      }`}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">EUR</span>
                   </div>
-                  {errors.cardNumber && (
-                    <p className="text-red-500 text-sm mt-1">{errors.cardNumber}</p>
-                  )}
                 </div>
 
-                {/* Име на картодържателя */}
-                <div>
-                  <label className="block text-gray-700 mb-2">
-                    Име на картодържателя *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={formData.cardHolder}
-                      onChange={(e) => handleInputChange('cardHolder', e.target.value.toUpperCase())}
-                      placeholder="IVAN PETROV"
-                      className={`w-full px-4 py-3 pl-12 border rounded-lg focus:outline-none focus:ring-2 uppercase ${
-                        errors.cardHolder
-                          ? 'border-red-500 focus:ring-red-500'
-                          : 'border-gray-300 focus:ring-blue-500'
-                      }`}
-                    />
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                {/* Допълнителна информация според метода */}
+                {paymentMethod === 'stripe' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-blue-800 text-sm">
+                      <Lock className="w-4 h-4 inline mr-1" />
+                      След натискане на бутона ще бъдете пренасочени към защитена страница за въвеждане на данни на картата
+                    </p>
                   </div>
-                  {errors.cardHolder && (
-                    <p className="text-red-500 text-sm mt-1">{errors.cardHolder}</p>
-                  )}
-                </div>
+                )}
 
-                {/* Срок на валидност и CVV */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-700 mb-2">
-                      Срок на валидност *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={formData.expiryDate}
-                        onChange={(e) => handleInputChange('expiryDate', e.target.value)}
-                        placeholder="MM/YY"
-                        className={`w-full px-4 py-3 pl-12 border rounded-lg focus:outline-none focus:ring-2 ${
-                          errors.expiryDate
-                            ? 'border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 focus:ring-blue-500'
-                        }`}
-                      />
-                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                {paymentMethod === 'bank' && (
+                  <div className="space-y-4">
+                    {/* Upload на PDF файл с платежното */}
+                    <div>
+                      <label className="block text-gray-700 mb-2">
+                        Платежно нареждане (PDF) *
+                      </label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+                        <input
+                          type="file"
+                          onChange={handleBankProofFileChange}
+                          className="hidden"
+                          id="bank-proof-upload"
+                          accept=".pdf,application/pdf"
+                        />
+                        <label htmlFor="bank-proof-upload" className="cursor-pointer">
+                          {bankProofFile ? (
+                            <div className="flex items-center justify-center gap-3">
+                              <FileText className="w-8 h-8 text-red-500" />
+                              <div className="text-left">
+                                <p className="text-gray-900">{bankProofFile.name}</p>
+                                <p className="text-sm text-gray-500">
+                                  {(bankProofFile.size / 1024).toFixed(2)} KB
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setBankProofFile(null);
+                                }}
+                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                              >
+                                <X className="w-5 h-5 text-gray-600" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                              <p className="text-gray-600 mb-1">
+                                Кликнете за избор на PDF файл
+                              </p>
+                              <p className="text-gray-400 text-sm">
+                                Качете скан или снимка на платежното нареждане
+                              </p>
+                            </>
+                          )}
+                        </label>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Плащането ще чака одобрение от мениджъра след преглед на документа
+                      </p>
                     </div>
-                    {errors.expiryDate && (
-                      <p className="text-red-500 text-sm mt-1">{errors.expiryDate}</p>
-                    )}
                   </div>
+                )}
 
-                  <div>
-                    <label className="block text-gray-700 mb-2">
-                      CVV *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={formData.cvv}
-                        onChange={(e) => handleInputChange('cvv', e.target.value)}
-                        placeholder="123"
-                        className={`w-full px-4 py-3 pl-12 border rounded-lg focus:outline-none focus:ring-2 ${
-                          errors.cvv
-                            ? 'border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 focus:ring-blue-500'
-                        }`}
-                      />
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    </div>
-                    {errors.cvv && (
-                      <p className="text-red-500 text-sm mt-1">{errors.cvv}</p>
-                    )}
+                {/* Съобщение за грешка */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-800 text-sm">{error}</p>
                   </div>
-                </div>
+                )}
 
                 {/* Бутон за плащане */}
                 <button
@@ -287,47 +363,53 @@ export function PaymentCheckout() {
                     </>
                   ) : (
                     <>
-                      <Lock className="w-5 h-5" />
-                      Плати {fee.amount.toFixed(2)} лв
+                      {paymentMethod === 'stripe' && <CreditCard className="w-5 h-5" />}
+                      {paymentMethod === 'cash' && <Banknote className="w-5 h-5" />}
+                      {paymentMethod === 'bank' && <Building2 className="w-5 h-5" />}
+                      {paymentMethod === 'stripe' ? 'Продължи към плащане' : 'Регистрирай плащане'}
                     </>
                   )}
                 </button>
-
-                <p className="text-sm text-gray-500 text-center">
-                  <Lock className="w-4 h-4 inline mr-1" />
-                  Плащането е защитено със SSL криптиране
-                </p>
               </form>
             </div>
           </div>
 
-          {/* Обобщение на поръчката */}
+          {/* Обобщение */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-lg p-6 sticky top-6">
               <h3 className="text-gray-900 mb-4">Обобщение</h3>
               
               <div className="space-y-3 mb-4 pb-4 border-b">
                 <div className="flex justify-between text-gray-600">
-                  <span>Такса:</span>
-                  <span>
-                    {fee.fundType === 'MAINTENANCE' ? 'Фонд Поддръжка' : 'Фонд Ремонти'}
-                  </span>
+                  <span>Апартамент:</span>
+                  <span>№ {selectedUnit.unitNumber}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Период:</span>
-                  <span>
-                    {new Date(fee.month).toLocaleDateString('bg-BG', { month: 'long', year: 'numeric' })}
-                  </span>
+                  <span>Вход:</span>
+                  <span className="text-right text-sm">{selectedUnit.buildingName}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Падеж:</span>
-                  <span>{new Date(fee.dueTo).toLocaleDateString('bg-BG')}</span>
+                  <span>Метод:</span>
+                  <span>
+                    {paymentMethod === 'stripe' ? 'Карта' : 'Банков превод'}
+                  </span>
                 </div>
+                {paymentMethod === 'bank' && bankProofFile && (
+                  <div className="flex flex-col gap-1 pt-2 border-t">
+                    <span className="text-gray-600 text-sm">Платежно нареждане:</span>
+                    <div className="flex items-center gap-2 bg-gray-50 p-2 rounded">
+                      <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <span className="text-xs text-gray-700 truncate">{bankProofFile.name}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between items-center mb-6">
-                <span className="text-gray-900">Обща сума:</span>
-                <span className="text-blue-600">{fee.amount.toFixed(2)} лв</span>
+                <span className="text-gray-900">Сума:</span>
+                <span className="text-blue-600">
+                  {amount ? parseFloat(amount).toFixed(2) : '0.00'} EUR
+                </span>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -336,7 +418,9 @@ export function PaymentCheckout() {
                   Сигурно плащане
                 </p>
                 <p className="text-green-700 text-xs mt-1">
-                  Данните на вашата карта са напълно защитени
+                  {paymentMethod === 'stripe' 
+                    ? 'Данните на вашата карта са напълно защитени'
+                    : 'Плащането ще бъде потвърдено от мениджъра'}
                 </p>
               </div>
             </div>

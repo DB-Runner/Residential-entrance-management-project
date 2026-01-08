@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, Vote, Calendar, Home } from 'lucide-react';
+import { LayoutDashboard, Receipt, Vote, Calendar, Home, Archive, TrendingUp } from 'lucide-react';
 import { DashboardView } from '../types/views';
 import { useSelection } from '../contexts/SelectionContext';
 
@@ -13,6 +13,7 @@ const menuItems = [
   { id: 'payments' as DashboardView, label: 'Плащания', icon: Receipt },
   { id: 'events' as DashboardView, label: 'Събития', icon: Calendar },
   { id: 'voting' as DashboardView, label: 'Гласувания', icon: Vote },
+  { id: 'archive' as DashboardView, label: 'Архив', icon: Archive },
 ];
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {

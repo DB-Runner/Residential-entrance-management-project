@@ -29,7 +29,6 @@ public class FinanceService {
 
     private final TransactionRepository transactionRepository;
     private final BuildingExpenseRepository expenseRepository;
-    private final UserRepository userRepository;
 
     private final TransactionMapper transactionMapper;
     private final BuildingExpenseMapper expenseMapper;
@@ -41,12 +40,6 @@ public class FinanceService {
 
     @Value("${payment.currency:EUR}")
     private String currency;
-
-    @Value("${payment.stripe.fee-percent}")
-    private BigDecimal stripeFeePercent;
-
-    @Value("${payment.stripe.fixed-fee}")
-    private BigDecimal stripeFixedFee;
 
     @PreAuthorize("@buildingSecurity.isUnitOwner(#unitId, principal.user)")
     public String initiateStripeDeposit(Long unitId, BigDecimal amount, User user) throws StripeException {
@@ -64,13 +57,13 @@ public class FinanceService {
     }
 
     @Transactional
-    public void recordStripeSuccess(Long unitId, BigDecimal amount, String stripeId, String receiptUrl) {
+    public void recordStripeSuccess(Long unitId, BigDecimal amount, BigDecimal fee, String stripeId, String receiptUrl) {
         if (transactionRepository.findByReferenceId(stripeId).isPresent()) return;
 
         createPaymentTransaction(unitId, amount, PaymentMethod.STRIPE, null,
                 "Stripe Deposit", stripeId, receiptUrl, null);
 
-        recordStripeFeeAsExpense(unitId, amount, stripeId);
+        recordStripeFeeAsExpense(unitId, fee, stripeId);
     }
 
     @Transactional
@@ -83,10 +76,11 @@ public class FinanceService {
     @PreAuthorize("@buildingSecurity.isUnitOwner(#unitId, principal.user)")
     public void submitBankTransfer(Long unitId, BigDecimal amount, String reference, String userUploadedFile) {
         createBaseTransaction(unitId, amount, TransactionType.PAYMENT, PaymentMethod.BANK_TRANSFER,
-                FundType.GENERAL, "Bank Transfer (Pending)", reference, userUploadedFile, TransactionStatus.PENDING);
+                FundType.GENERAL, "Bank Transfer", reference, userUploadedFile, TransactionStatus.PENDING);
     }
 
     @Transactional
+    @PreAuthorize("@buildingSecurity.canManageUnitByTransactionId(#transactionId, principal.user)")
     public void approveTransaction(Long transactionId, User manager) {
         Transaction t = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new EntityNotFoundException("Transaction not found"));
@@ -102,10 +96,12 @@ public class FinanceService {
     }
 
     @Transactional
+    @PreAuthorize("@buildingSecurity.canManageUnitByTransactionId(#transactionId, principal.user)")
     public void rejectTransaction(Long transactionId) {
         Transaction t = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new EntityNotFoundException("Transaction not found"));
-        transactionRepository.delete(t);
+        t.setStatus(TransactionStatus.REJECTED);
+        transactionRepository.save(t);
     }
 
     private void createPaymentTransaction(Long unitId, BigDecimal amount, PaymentMethod method,
@@ -181,13 +177,15 @@ public class FinanceService {
         for (Unit unit : units) {
             try {
                 if (totalArea.compareTo(BigDecimal.ZERO) > 0) {
-                    BigDecimal myShareRatio = unit.getArea().divide(totalArea, 4, RoundingMode.HALF_UP);
-                    BigDecimal myRepairFee = building.getRepairBudget().multiply(myShareRatio);
+                    BigDecimal myRepairFee = building.getRepairBudget()
+                            .multiply(unit.getArea())
+                            .divide(totalArea, 2, RoundingMode.HALF_UP);
                     chargeFeeInternal(unit, myRepairFee, FundType.REPAIR, "Monthly Repair " + month);
                 }
                 if (totalResidents > 0 && unit.getResidentsCount() > 0) {
-                    BigDecimal pricePerPerson = building.getMaintenanceBudget().divide(new BigDecimal(totalResidents), 2, RoundingMode.HALF_UP);
-                    BigDecimal myMaintenanceFee = pricePerPerson.multiply(new BigDecimal(unit.getResidentsCount()));
+                    BigDecimal myMaintenanceFee = building.getMaintenanceBudget()
+                            .multiply(new BigDecimal(unit.getResidentsCount()))
+                            .divide(new BigDecimal(totalResidents), 2, RoundingMode.HALF_UP);
                     chargeFeeInternal(unit, myMaintenanceFee, FundType.MAINTENANCE, "Monthly Maint " + month);
                 }
             } catch (Exception e) {
@@ -196,37 +194,7 @@ public class FinanceService {
         }
     }
 
-    @Transactional
-    public void createExtraordinaryExpense(Integer buildingId, BigDecimal totalAmount,
-                                           String description, FundType fundType,
-                                           SplitMethod splitMethod) {
-        List<Unit> units = unitService.findAllByBuildingId(buildingId);
-        BigDecimal totalDivisor = BigDecimal.ZERO;
-
-        if (splitMethod == SplitMethod.BY_AREA) {
-            totalDivisor = units.stream().map(Unit::getArea).reduce(BigDecimal.ZERO, BigDecimal::add);
-        } else if (splitMethod == SplitMethod.BY_OCCUPANT) {
-            totalDivisor = BigDecimal.valueOf(units.stream().mapToInt(u -> u.getResidentsCount() == null ? 0 : u.getResidentsCount()).sum());
-        } else {
-            totalDivisor = BigDecimal.valueOf(units.size());
-        }
-
-        if (totalDivisor.compareTo(BigDecimal.ZERO) == 0) return;
-
-        for (Unit unit : units) {
-            BigDecimal share = BigDecimal.ZERO;
-            if (splitMethod == SplitMethod.BY_AREA) {
-                share = unit.getArea().divide(totalDivisor, 4, RoundingMode.HALF_UP).multiply(totalAmount);
-            } else if (splitMethod == SplitMethod.BY_OCCUPANT) {
-                share = BigDecimal.valueOf(unit.getResidentsCount() == null ? 0 : unit.getResidentsCount())
-                        .divide(totalDivisor, 4, RoundingMode.HALF_UP).multiply(totalAmount);
-            } else {
-                share = totalAmount.divide(totalDivisor, 2, RoundingMode.HALF_UP);
-            }
-            chargeFeeInternal(unit, share, fundType, "EXTRA: " + description);
-        }
-    }
-
+    @PreAuthorize("@buildingSecurity.isManager(#buildingId, principal.user)")
     public FinancialSummary getBuildingFinancialSummary(Integer buildingId) {
         List<Object[]> incomeByFund = transactionRepository.sumIncomeByFundFromSplits(buildingId);
         List<Object[]> expenseByFund = expenseRepository.sumExpensesByFund(buildingId);
@@ -260,29 +228,42 @@ public class FinanceService {
     }
 
     @PreAuthorize("@buildingSecurity.canAccessUnitFinance(#unitId, principal.user)")
-    public BigDecimal getBalance(Long unitId) { return transactionRepository.calculateConfirmedBalance(unitId); }
+    public BigDecimal getBalance(Long unitId) {
+        Unit unit = unitService.findById(unitId).orElseThrow();
+
+        if (unit.getResponsibleUser() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return transactionRepository.calculateUserBalance(unitId, unit.getResponsibleUser().getId());
+    }
 
     @Transactional(readOnly = true)
+    @PreAuthorize("@buildingSecurity.canAccessUnitFinance(#unitId, principal.user)")
     public boolean hasPendingPayments(Long unitId) {
         return transactionRepository.existsByUnitIdAndStatus(unitId, TransactionStatus.PENDING);
     }
 
-    public List<TransactionResponse> getBuildingTransactions(Integer bId, TransactionType type, TransactionStatus status) {
-        return transactionRepository.searchTransactions(bId, type, status).stream().map(transactionMapper::toResponse).toList();
+    @PreAuthorize("@buildingSecurity.isManager(#buildingId, principal.user)")
+    public List<TransactionResponse> getBuildingTransactions(Integer buildingId, TransactionType type, TransactionStatus status) {
+        return transactionRepository.searchTransactions(buildingId, type, status).stream().map(transactionMapper::toResponse).toList();
     }
 
+    @PreAuthorize("@buildingSecurity.canAccessUnitFinance(#unitId, principal.user)")
     public List<TransactionResponse> getTransactionHistory(Long unitId, TransactionType type) {
+        Unit unit = unitService.findById(unitId).orElseThrow();
+
         List<Transaction> transactions = (type != null)
-                ? transactionRepository.findAllByUnitIdAndTypeOrderByCreatedAtDesc(unitId, type)
-                : transactionRepository.findAllByUnitIdOrderByCreatedAtDesc(unitId);
+                ? transactionRepository.findAllByUnitIdAndTypeAndResponsibleUserIdOrderByCreatedAtDesc(unitId, type, unit.getResponsibleUser().getId())
+                : transactionRepository.findAllByUnitIdAndResponsibleUserIdOrderByCreatedAtDesc(unitId, unit.getResponsibleUser().getId());
+
         return transactions.stream().map(transactionMapper::toResponse).toList();
     }
 
     @PreAuthorize("@buildingSecurity.hasAccess(#buildingId, principal.user)")
-    public List<BuildingExpenseResponse> getBuildingExpenses(Integer bId) {
-        return expenseRepository.findAllByBuildingIdOrderByExpenseDateDesc(bId).stream().map(expenseMapper::toResponse).toList();
+    public List<BuildingExpenseResponse> getBuildingExpenses(Integer buildingId) {
+        return expenseRepository.findAllByBuildingIdOrderByExpenseDateDesc(buildingId).stream().map(expenseMapper::toResponse).toList();
     }
-
 
     private Transaction createBaseTransaction(Long unitId, BigDecimal amount, TransactionType type, PaymentMethod method,
                                               FundType fund, String desc, String refId, String externalProof, TransactionStatus status) {
@@ -298,6 +279,7 @@ public class FinanceService {
         t.setExternalProofUrl(externalProof);
         t.setStatus(status);
         t.setCreatedAt(Instant.now());
+        t.setResponsibleUser(unit.getResponsibleUser());
         return transactionRepository.save(t);
     }
 
@@ -307,12 +289,11 @@ public class FinanceService {
                 fundType, description, null, null, TransactionStatus.CONFIRMED);
     }
 
-    private void recordStripeFeeAsExpense(Long unitId, BigDecimal amount, String stripeId) {
+    private void recordStripeFeeAsExpense(Long unitId, BigDecimal fee, String stripeId) {
         Unit unit = unitService.findById(unitId).orElseThrow();
-        BigDecimal feeAmount = amount.multiply(stripeFeePercent).add(stripeFixedFee).setScale(2, RoundingMode.HALF_UP);
         BuildingExpense feeExpense = new BuildingExpense();
         feeExpense.setBuilding(unit.getBuilding());
-        feeExpense.setAmount(feeAmount);
+        feeExpense.setAmount(fee);
         feeExpense.setDescription("Stripe Fee (Tx: " + stripeId + ")");
         feeExpense.setFundType(FundType.GENERAL);
         feeExpense.setExpenseDate(Instant.now());
@@ -333,10 +314,17 @@ public class FinanceService {
     }
 
     private BigDecimal getFundDebt(Long unitId, FundType fundType) {
-        BigDecimal totalFees = transactionRepository.sumFeesByUnitAndFund(unitId, fundType);
+        Unit unit = unitService.findById(unitId).orElseThrow();
+        if (unit.getResponsibleUser() == null) return BigDecimal.ZERO;
+
+        Long userId = unit.getResponsibleUser().getId();
+
+        BigDecimal totalFees = transactionRepository.sumFeesByUserAndFund(unitId, userId, fundType);
         if (totalFees == null) totalFees = BigDecimal.ZERO;
-        BigDecimal totalPaid = transactionRepository.sumSplitsByUnitAndFund(unitId, fundType);
+
+        BigDecimal totalPaid = transactionRepository.sumSplitsByUserAndFund(unitId, userId, fundType);
         if (totalPaid == null) totalPaid = BigDecimal.ZERO;
+
         BigDecimal netBalance = totalFees.add(totalPaid);
         return netBalance.compareTo(BigDecimal.ZERO) < 0 ? netBalance.abs() : BigDecimal.ZERO;
     }
@@ -365,8 +353,12 @@ public class FinanceService {
     }
 
     @Transactional
+    @PreAuthorize("@buildingSecurity.canManageUnit(#unitId, principal.user)")
     public void clearUnitBalance(Long unitId) {
-        BigDecimal currentBalance = transactionRepository.calculateConfirmedBalance(unitId);
+        Unit unit = unitService.findById(unitId).orElseThrow();
+        if (unit.getResponsibleUser() == null) return;
+
+        BigDecimal currentBalance = transactionRepository.calculateUserBalance(unitId, unit.getResponsibleUser().getId());
 
         if (currentBalance == null || currentBalance.compareTo(BigDecimal.ZERO) == 0) {
             return;
@@ -399,6 +391,4 @@ public class FinanceService {
             );
         }
     }
-
-    public enum SplitMethod { BY_AREA, BY_OCCUPANT, EQUAL_PER_UNIT }
 }

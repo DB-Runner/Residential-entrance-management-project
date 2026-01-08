@@ -4,6 +4,7 @@ import { Overview } from './Overview';
 import { PaymentsPage } from './PaymentsPage';
 import { EventsPage } from './EventsPage';
 import { VotingPage } from './VotingPage';
+import { Archives } from './Archives';
 import { ProfilePage } from './ProfilePage';
 import { HomesAndBuildings } from './HomesAndBuildings';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -33,13 +34,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden pt-[73px]">
       <DashboardHeader onLogout={onLogout} />
       
       <div className="flex">
         <Sidebar currentView={currentView} onViewChange={handleViewChange} />
         
-        <main className="flex-1 p-6 ml-64">
+        <main className="flex-1 p-6 ml-64 overflow-x-hidden">
           {currentView === 'homes' && <HomesAndBuildings />}
           
           {currentView === 'overview' && <Overview />}
@@ -49,6 +50,8 @@ export function Dashboard({ onLogout }: DashboardProps) {
           {currentView === 'events' && <EventsPage />}
           
           {currentView === 'voting' && <VotingPage />}
+
+          {currentView === 'archive' && <Archives />}
 
           {currentView === 'profile' && <ProfilePage />}
         </main>

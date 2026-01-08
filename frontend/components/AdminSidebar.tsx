@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Receipt, Calendar, Vote, Archive, Home } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, Calendar, Vote, Archive, Home, TrendingUp } from 'lucide-react';
 import { AdminView } from '../types/views';
 import { useSelection } from '../contexts/SelectionContext';
 

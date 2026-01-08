@@ -75,8 +75,19 @@ export const unitService = {
   join: async (data: JoinUnitRequest): Promise<JoinUnitResponse> => {
     try {
       return await api.post<JoinUnitResponse>('/units/join', data);
-    } catch (error) {
-      // Mock данни за тестване без backend
+    } catch (error: any) {
+      // Проверяваме дали грешката е от backend (404, 409, и т.н.)
+      // Ако е реална грешка от backend, хвърляме я нагоре
+      if (error.message?.includes('404') || 
+          error.message?.includes('409') || 
+          error.message?.toLowerCase().includes('not found') ||
+          error.message?.toLowerCase().includes('invalid') ||
+          error.message?.toLowerCase().includes('already')) {
+        throw error;
+      }
+      
+      // Ако е connection error (няма backend), връщаме mock данни
+      console.warn('Backend not available, using mock data for unit join');
       return {
         id: Math.floor(Math.random() * 100) + 1,
         unitNumber: Math.floor(Math.random() * 50) + 1,
@@ -88,6 +99,7 @@ export const unitService = {
       };
     }
   },
+
 
   // Получи моите апартаменти (с buildingInfo)
   getMyUnits: async (): Promise<UnitResponseFromAPI[]> => {
@@ -102,7 +114,7 @@ export const unitService = {
   // Получи всички апартаменти за конкретна сграда
   getAllByBuilding: async (buildingId: number): Promise<UnitResponseFromAPI[]> => {
     try {
-      return await api.get<UnitResponseFromAPI[]>(`/units/buildings/${buildingId}/units`);
+      return await api.get<UnitResponseFromAPI[]>(`/units/buildings/${buildingId}`);
     } catch (error) {
       console.error('Error fetching units for building:', error);
       return [];
@@ -123,7 +135,7 @@ export const unitService = {
   // Редактирай апартамент (от домоуправител)
   update: async (id: number, data: UpdateUnitRequest): Promise<UnitResponseFromAPI> => {
     try {
-      return await api.put<UnitResponseFromAPI>(`/units/units/${id}`, data);
+      return await api.put<UnitResponseFromAPI>(`/units/${id}`, data);
     } catch (error) {
       throw new Error('Апартаментът не може да бъде редактиран в момента');
     }
@@ -132,7 +144,7 @@ export const unitService = {
   // Потвърди апартамент (verify)
   verify: async (id: number): Promise<void> => {
     try {
-      await api.patch(`/units/units/${id}/verify`, {});
+      await api.patch(`/units/${id}/verify`, {});
     } catch (error) {
       throw new Error('Грешка при потвърждаване на апартамент');
     }
@@ -141,9 +153,9 @@ export const unitService = {
   // Изтрий апартамент
   delete: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/units/${id}`);
+      await api.delete(`/units/${id}/resident`);
     } catch (error) {
-      throw new Error('Апартаментът не може да бъде изтрит в момента');
+      throw new Error('Грешка при премахване на жител от апартамент');
     }
   },
 };

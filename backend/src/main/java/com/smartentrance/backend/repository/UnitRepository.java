@@ -1,7 +1,6 @@
 package com.smartentrance.backend.repository;
 
 import com.smartentrance.backend.model.Unit;
-import com.smartentrance.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,9 +14,9 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
 
     boolean existsByAccessCode(String accessCode);
 
-    List<Unit> findAllByResponsibleUserId(Integer userId);
+    List<Unit> findAllByResponsibleUserId(Long userId);
 
-    boolean existsByBuildingIdAndResponsibleUserId(Integer buildingId, Integer userId);
+    boolean existsByBuildingIdAndResponsibleUserId(Integer buildingId, Long userId);
 
     List<Unit> findAllByBuildingIdOrderByUnitNumberAsc(Integer buildingId);
 
