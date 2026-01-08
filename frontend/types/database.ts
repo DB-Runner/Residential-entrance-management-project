@@ -6,9 +6,36 @@ export enum PaymentStatus {
   FAILED = 'FAILED'
 }
 
+export enum TransactionStatus {
+  CONFIRMED = 'CONFIRMED',
+  PENDING = 'PENDING',
+  REJECTED = 'REJECTED'
+}
+
+export enum TransactionType {
+  FEE = 'FEE',
+  PAYMENT = 'PAYMENT'
+}
+
+export enum PaymentMethod {
+  SYSTEM = 'SYSTEM',
+  STRIPE = 'STRIPE',
+  CASH = 'CASH',
+  BANK = 'BANK',
+  BANK_TRANSFER = 'BANK_TRANSFER' // Backend използва този вариант
+}
+
 export enum FundType {
-  MAINTENANCE = 'MAINTENANCE',  // Фонд Поддръжка
-  REPAIR = 'REPAIR'              // Фонд Ремонти
+  MAINTENANCE = 'MAINTENANCE',  // Фонд Поддръжка (backend използва GENERAL)
+  REPAIR = 'REPAIR',             // Фонд Ремонти
+  GENERAL = 'GENERAL'            // Общ фонд (алиас за MAINTENANCE)
+}
+
+export enum DocumentType {
+  PROTOCOL = 'PROTOCOL',
+  INVOICE = 'INVOICE',
+  CONTRACT = 'CONTRACT',
+  OTHER = 'OTHER'
 }
 
 export interface User {
@@ -194,4 +221,70 @@ export interface VotesPollWithResults extends VotesPoll {
   options?: (VotesOption & { voteCount?: number })[];
   totalVotes?: number;
   userVote?: UserVote;
+}
+
+// New Transaction Types (from API)
+export interface Transaction {
+  id: number;
+  amount: number;
+  type: TransactionType;
+  fundType: FundType;
+  paymentMethod: PaymentMethod;
+  description: string;
+  transactionStatus: TransactionStatus;
+  documentUrl: string | null;
+  externalDocumentUrl: string | null;
+  createdAt: string;
+  unitId: number;
+  unitNumber: number;
+}
+
+// Receipt Details (from API)
+export interface ReceiptDetails {
+  receiptNumber: number;
+  issueDate: string;
+  payerName: string;
+  payerUnit: number;
+  buildingAddress: string;
+  managerName: string;
+  amount: number;
+  currency: string;
+  reason: string;
+  documentUrl: string;
+}
+
+// Stripe Payment Types
+export interface StripePaymentRequest {
+  amount: number;
+}
+
+export interface StripePaymentResponse {
+  clientSecret: string;
+  transactionId: number;
+}
+
+// Cash Payment Request
+export interface CashPaymentRequest {
+  amount: number;
+  fundType: FundType;
+  note: string;
+}
+
+// Bank Payment Request
+export interface BankPaymentRequest {
+  amount: number;
+  transactionReference: string;
+  proofUrl: string;
+}
+
+// Document (from API)
+export interface Document {
+  id: number;
+  title: string;
+  description: string;
+  type: DocumentType;
+  fileUrl: string;
+  uploaderName: string;
+  isVisible: boolean;
+  createdAt: string;
 }
