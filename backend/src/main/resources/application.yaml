@@ -23,6 +23,19 @@ spring:
         jdbc:
           time_zone: UTC
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    from: ${MAIL_FROM:noreply@smartentrance.com}
+
 application:
   security:
     jwt:
@@ -38,8 +51,9 @@ payment:
   currency: EUR
 
   stripe:
-    api-key: ${STRIPE_API_KEY}
-    webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+    enabled: false
+    # api-key: ${STRIPE_API_KEY}
+    # webhook-secret: ${STRIPE_WEBHOOK_SECRET}
 
 file:
     upload-dir: ./backend/uploads
