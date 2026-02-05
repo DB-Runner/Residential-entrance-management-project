@@ -10,6 +10,7 @@ import com.stripe.net.Webhook;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @RestController
+@ConditionalOnProperty(
+        name = "payment.stripe.enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 @RequestMapping("/api/webhooks")
 @RequiredArgsConstructor
 public class StripeWebhookController {
